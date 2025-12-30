@@ -1,12 +1,55 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Lock, Mail } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from './ui/button'
 import { Checkbox } from './ui/checkbox'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 
 export function LoginPage() {
+  const navigate = useNavigate()
+  const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState('')
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setStatus('loading')
+    setErrorMessage('')
+
+    const formData = new FormData(event.currentTarget)
+    const payload = {
+      email: String(formData.get('email') ?? ''),
+      password: String(formData.get('password') ?? ''),
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        },
+      )
+
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as
+          | { message?: string }
+          | null
+        setStatus('error')
+        setErrorMessage(data?.message ?? '登录失败，请重试。')
+        return
+      }
+
+      navigate('/dashboard')
+    } catch (error) {
+      setStatus('error')
+      setErrorMessage('网络异常，请检查后重试。')
+    }
+  }
+
   return (
     <div className="relative flex min-h-screen min-h-[100svh] w-full items-center justify-center overflow-x-hidden bg-[radial-gradient(circle_at_10%_20%,#f7f0e8_0%,#f2efe9_35%,#f6f7f4_100%)] px-[6vw] py-[clamp(2rem,5vh,3.5rem)] text-[#0b0d12]">
       <motion.section
@@ -34,10 +77,7 @@ export function LoginPage() {
           </p>
         </div>
 
-        <form
-          className="mt-8 space-y-5"
-          onSubmit={(event) => event.preventDefault()}
-        >
+        <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <Label htmlFor="email" className="text-sm font-semibold text-[#1c2333]">
               邮箱地址
@@ -46,6 +86,7 @@ export function LoginPage() {
               <Mail size={18} className="text-[#7b8496]" />
               <Input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="you@team.com"
                 className="h-auto border-0 bg-transparent p-0 text-base focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -65,6 +106,7 @@ export function LoginPage() {
               <Lock size={18} className="text-[#7b8496]" />
               <Input
                 id="password"
+                name="password"
                 type="password"
                 placeholder="至少 8 位字符"
                 className="h-auto border-0 bg-transparent p-0 text-base focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -81,7 +123,7 @@ export function LoginPage() {
               </Label>
             </div>
             <Button
-              type="button"
+              asChild
               variant="link"
               className="h-auto p-0 text-sm font-semibold text-[#1c7c8c]"
             >
@@ -89,8 +131,18 @@ export function LoginPage() {
             </Button>
           </div>
 
-          <Button className="h-12 w-full rounded-full bg-gradient-to-r from-[#ff6a3d] to-[#ff9a5f] text-base font-bold text-[#151515] shadow-[0_10px_30px_rgba(255,106,61,0.35)] hover:opacity-90">
-            进入控制台
+          {status === 'error' ? (
+            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {errorMessage}
+            </p>
+          ) : null}
+
+          <Button
+            type="submit"
+            disabled={status === 'loading'}
+            className="h-12 w-full rounded-full bg-gradient-to-r from-[#ff6a3d] to-[#ff9a5f] text-base font-bold text-[#151515] shadow-[0_10px_30px_rgba(255,106,61,0.35)] hover:opacity-90"
+          >
+            登录
             <ArrowRight size={18} className="ml-2" />
           </Button>
         </form>

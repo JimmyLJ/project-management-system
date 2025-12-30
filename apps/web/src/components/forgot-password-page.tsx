@@ -28,7 +28,7 @@ export function ForgotPasswordPage() {
               variant="link"
               className="h-auto p-0 pl-2 text-sm font-semibold text-[#1c7c8c]"
             >
-              <Link to="/">返回登录</Link>
+              <Link to="/login">返回登录</Link>
             </Button>
           </p>
         </div>
