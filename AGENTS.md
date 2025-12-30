@@ -4,11 +4,9 @@
 
 这是一个基于 monorepo 的全栈项目。
 技术栈：
-- 前端：
-  - Vite
-  - React
-  - Tailwind CSS
-  - shadcn/ui
+- 前端：Vite, React, Tailwind CSS, shadcn/ui
+- 后端：hono.js, Drizzle
+- 数据库：PostgreSQL
 
 ## 约束
 - 优先使用 shadcn/ui 组件
