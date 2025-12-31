@@ -1,5 +1,4 @@
 import {
-  Bell,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -7,9 +6,11 @@ import {
   Folder,
   FolderOpen,
   LayoutGrid,
+  Moon,
   Plus,
   Search,
   Settings,
+  Sun,
   Timer,
   Users,
 } from 'lucide-react'
@@ -17,6 +18,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { CreateOrganizationDialog } from './create-organization-dialog'
 import { SettingsDialog } from './settings-dialog'
 import { Button } from './ui/button'
+
+type DashboardNav = 'dashboard' | 'projects' | 'team' | 'settings'
 
 export function DashboardPage() {
   const [organizations, setOrganizations] = useState<
@@ -26,6 +29,8 @@ export function DashboardPage() {
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false)
   const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [activeNav, setActiveNav] = useState<DashboardNav>('dashboard')
+  const [isDarkMode, setIsDarkMode] = useState(false)
   const workspaceMenuRef = useRef<HTMLDivElement | null>(null)
 
   const normalizeLogoUrl = (logoUrl: string | null) => {
@@ -96,6 +101,28 @@ export function DashboardPage() {
     loadOrganizations()
   }, [loadOrganizations])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const storedTheme = localStorage.getItem('theme')
+    const prefersDark =
+      window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches
+    const shouldUseDark = storedTheme
+      ? storedTheme === 'dark'
+      : prefersDark
+    setIsDarkMode(shouldUseDark)
+    document.documentElement.classList.toggle('dark', shouldUseDark)
+  }, [])
+
+  const handleToggleTheme = () => {
+    setIsDarkMode((prev) => {
+      const next = !prev
+      document.documentElement.classList.toggle('dark', next)
+      localStorage.setItem('theme', next ? 'dark' : 'light')
+      return next
+    })
+  }
+
   const selectedOrg =
     organizations.find((org) => org.id === selectedOrgId) ?? null
   const organizationName = selectedOrg?.name ?? '测试组织'
@@ -107,7 +134,7 @@ export function DashboardPage() {
   })()
 
   return (
-    <div className="min-h-screen bg-[#f6f7fb] text-[#101828]">
+    <div className="min-h-screen bg-[#f6f7fb] text-[#101828] dark:bg-[#0b0f1a] dark:text-slate-100">
       <CreateOrganizationDialog
         open={createWorkspaceOpen}
         onCreated={() => {
@@ -119,19 +146,19 @@ export function DashboardPage() {
       />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <div className="flex min-h-screen">
-        <aside className="flex w-64 flex-col border-r border-slate-200 bg-white px-5 py-6">
+        <aside className="flex w-64 flex-col border-r border-slate-200 bg-white px-5 py-6 dark:border-slate-800 dark:bg-[#0f172a]">
           <div className="relative" ref={workspaceMenuRef}>
             <button
               type="button"
-              className={`flex w-full items-center justify-between rounded-xl px-2 py-2 transition hover:bg-slate-50 cursor-pointer ${
-                workspaceMenuOpen ? 'bg-slate-100' : ''
+              className={`flex w-full items-center justify-between rounded-xl px-2 py-2 transition hover:bg-slate-50 cursor-pointer dark:hover:bg-slate-800 ${
+                workspaceMenuOpen ? 'bg-slate-100 dark:bg-slate-800' : ''
               }`}
               onClick={() => setWorkspaceMenuOpen((prev) => !prev)}
               aria-haspopup="menu"
               aria-expanded={workspaceMenuOpen}
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-slate-200 text-xs font-semibold text-slate-400">
+                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-slate-200 text-xs font-semibold text-slate-400 dark:bg-slate-800 dark:text-slate-500">
                   {organizationLogoUrl ? (
                     <img
                       src={organizationLogoUrl}
@@ -144,21 +171,21 @@ export function DashboardPage() {
                 </div>
                 <div className="space-y-0.5 text-left">
                   <p className="text-sm font-semibold">{organizationName}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {organizations.length} 个工作区
                   </p>
                 </div>
               </div>
               <ChevronDown
                 size={16}
-                className={`text-slate-400 transition ${
+                className={`text-slate-400 transition dark:text-slate-500 ${
                   workspaceMenuOpen ? 'rotate-180' : ''
                 }`}
               />
             </button>
             {workspaceMenuOpen ? (
-              <div className="absolute left-0 top-full z-20 mt-2 w-full min-w-[220px] rounded-xl border border-slate-200 bg-white p-2 shadow-[0_12px_30px_rgba(15,23,42,0.12)]">
-                <div className="px-3 pb-2 pt-1 text-[11px] font-semibold tracking-[0.2em] text-slate-400">
+              <div className="absolute left-0 top-full z-20 mt-2 w-full min-w-[220px] rounded-xl border border-slate-200 bg-white p-2 shadow-[0_12px_30px_rgba(15,23,42,0.12)] dark:border-slate-800 dark:bg-[#0f172a]">
+                <div className="px-3 pb-2 pt-1 text-[11px] font-semibold tracking-[0.2em] text-slate-400 dark:text-slate-500">
                   工作区
                 </div>
                 {organizations.length > 0 ? (
@@ -174,13 +201,13 @@ export function DashboardPage() {
                         <button
                           key={org.id}
                           type="button"
-                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-slate-50 cursor-pointer ${
-                            isSelected ? 'bg-slate-50' : ''
+                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-slate-50 cursor-pointer dark:hover:bg-slate-800 ${
+                            isSelected ? 'bg-slate-50 dark:bg-slate-800' : ''
                           }`}
                           onClick={() => setSelectedOrgId(org.id)}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-slate-200 text-xs font-semibold text-slate-400">
+                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-slate-200 text-xs font-semibold text-slate-400 dark:bg-slate-800 dark:text-slate-500">
                               {org.logoUrl ? (
                                 <img
                                   src={org.logoUrl}
@@ -192,30 +219,30 @@ export function DashboardPage() {
                               )}
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-slate-800">
+                              <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                                 {org.name}
                               </p>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
                                 1 名成员
                               </p>
                             </div>
                           </div>
                           {isSelected ? (
-                            <Check size={16} className="text-blue-600" />
+                            <Check size={16} className="text-blue-600 dark:text-blue-400" />
                           ) : null}
                         </button>
                       )
                     })}
                   </div>
                 ) : (
-                  <div className="px-3 py-2 text-xs text-slate-400">
+                  <div className="px-3 py-2 text-xs text-slate-400 dark:text-slate-500">
                     暂无工作区
                   </div>
                 )}
-                <div className="my-2 h-px bg-slate-200" />
+                <div className="my-2 h-px bg-slate-200 dark:bg-slate-800" />
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50 cursor-pointer"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50 cursor-pointer dark:text-blue-400 dark:hover:bg-slate-800"
                   onClick={() => {
                     setCreateWorkspaceOpen(true)
                     setWorkspaceMenuOpen(false)
@@ -230,47 +257,94 @@ export function DashboardPage() {
 
           <nav className="mt-8 space-y-1 text-sm">
             <button
-              className="flex w-full items-center gap-3 rounded-lg bg-slate-100 px-3 py-2 font-semibold text-slate-900"
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 font-semibold ${
+                activeNav === 'dashboard'
+                  ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
+                  : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+              }`}
               data-testid="nav-dashboard"
+              onClick={() => setActiveNav('dashboard')}
             >
-              <LayoutGrid size={18} className="text-slate-700" />
+              <LayoutGrid
+                size={18}
+                className={
+                  activeNav === 'dashboard'
+                    ? 'text-slate-700 dark:text-slate-200'
+                    : 'text-slate-500 dark:text-slate-400'
+                }
+              />
               仪表盘
             </button>
             <button
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-50"
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 font-semibold ${
+                activeNav === 'projects'
+                  ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
+                  : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+              }`}
               data-testid="nav-projects"
+              onClick={() => setActiveNav('projects')}
             >
-              <Folder size={18} className="text-slate-500" />
+              <Folder
+                size={18}
+                className={
+                  activeNav === 'projects'
+                    ? 'text-slate-700 dark:text-slate-200'
+                    : 'text-slate-500 dark:text-slate-400'
+                }
+              />
               项目
             </button>
             <button
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-50"
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 font-semibold ${
+                activeNav === 'team'
+                  ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
+                  : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+              }`}
               data-testid="nav-team"
+              onClick={() => setActiveNav('team')}
             >
-              <Users size={18} className="text-slate-500" />
+              <Users
+                size={18}
+                className={
+                  activeNav === 'team'
+                    ? 'text-slate-700 dark:text-slate-200'
+                    : 'text-slate-500 dark:text-slate-400'
+                }
+              />
               团队
             </button>
             <button
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-50"
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 font-semibold ${
+                activeNav === 'settings'
+                  ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
+                  : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
+              }`}
               onClick={() => setSettingsOpen(true)}
               data-testid="nav-settings"
             >
-              <Settings size={18} className="text-slate-500" />
+              <Settings
+                size={18}
+                className={
+                  activeNav === 'settings'
+                    ? 'text-slate-700 dark:text-slate-200'
+                    : 'text-slate-500 dark:text-slate-400'
+                }
+              />
               设置
             </button>
           </nav>
 
-          <div className="mt-8 border-t border-slate-200 pt-6 text-sm text-slate-500">
+          <div className="mt-8 border-t border-slate-200 pt-6 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
             <div className="flex items-center justify-between rounded-lg px-3 py-2">
               <span className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-slate-400" />
+                <CheckCircle2 size={16} className="text-slate-400 dark:text-slate-500" />
                 我的任务
               </span>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                 0
               </span>
             </div>
-            <div className="mt-6 flex items-center justify-between px-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+            <div className="mt-6 flex items-center justify-between px-3 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
               <span>项目</span>
               <span className="text-base">+</span>
             </div>
@@ -278,17 +352,21 @@ export function DashboardPage() {
         </aside>
 
         <div className="flex flex-1 flex-col">
-          <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-8">
-            <div className="flex w-full max-w-md items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-400">
+          <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-8 dark:border-slate-800 dark:bg-[#0f172a]">
+            <div className="flex w-full max-w-md items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-400 dark:border-slate-700 dark:bg-slate-900/60">
               <Search size={16} />
               <input
                 placeholder="搜索项目、任务..."
-                className="w-full bg-transparent text-sm text-slate-700 outline-none"
+                className="w-full bg-transparent text-sm text-slate-700 outline-none dark:text-slate-200"
               />
             </div>
             <div className="ml-6 flex items-center gap-4">
-              <button className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500">
-                <Bell size={18} />
+              <button
+                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-transform hover:scale-105 dark:border-slate-700 dark:text-slate-300"
+                onClick={handleToggleTheme}
+                aria-label={isDarkMode ? '切换到浅色模式' : '切换到深色模式'}
+              >
+                {isDarkMode ? <Sun size={18} className="text-amber-300" /> : <Moon size={18} />}
               </button>
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-500 text-sm font-semibold text-white">
                 Ji
@@ -297,153 +375,307 @@ export function DashboardPage() {
           </header>
 
           <main className="flex-1 space-y-6 px-8 py-8">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-semibold">欢迎回来，Ji Li</h1>
-                <p className="text-sm text-slate-500">
-                  这里是你今天项目的最新动态
-                </p>
-              </div>
-              <Button className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500">
-                + 新建项目
-              </Button>
-            </div>
-
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {[
-                {
-                  title: '项目总数',
-                  value: '0',
-                  desc: '测试组织内项目数',
-                  icon: <FolderOpen size={18} className="text-blue-600" />,
-                  color: 'bg-blue-50',
-                },
-                {
-                  title: '已完成项目',
-                  value: '0',
-                  desc: '共 0 个',
-                  icon: <CheckCircle2 size={18} className="text-emerald-600" />,
-                  color: 'bg-emerald-50',
-                },
-                {
-                  title: '我的任务',
-                  value: '0',
-                  desc: '分配给我',
-                  icon: <Users size={18} className="text-purple-600" />,
-                  color: 'bg-purple-50',
-                },
-                {
-                  title: '逾期',
-                  value: '0',
-                  desc: '需要关注',
-                  icon: <CircleAlert size={18} className="text-amber-600" />,
-                  color: 'bg-amber-50',
-                },
-              ].map((card) => (
-                <div
-                  key={card.title}
-                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-slate-500">{card.title}</div>
-                    <div
-                      className={`flex h-9 w-9 items-center justify-center rounded-full ${card.color}`}
-                    >
-                      {card.icon}
-                    </div>
+            {activeNav === 'projects' ? (
+              <section className="space-y-8">
+                <div className="flex flex-wrap items-start justify-between gap-6">
+                  <div>
+                    <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                      项目
+                    </h1>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      管理并跟踪你的项目
+                    </p>
                   </div>
-                  <div className="mt-3 text-2xl font-semibold">{card.value}</div>
-                  <div className="text-xs text-slate-400">{card.desc}</div>
+                  <Button className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500">
+                    <Plus size={16} className="mr-2" />
+                    新建项目
+                  </Button>
                 </div>
-              ))}
-            </section>
 
-            <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-              <div className="space-y-6">
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-slate-800">
-                      项目概览
-                    </h2>
-                    <button className="text-sm text-slate-400 hover:text-slate-600">
-                      查看全部 →
-                    </button>
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex w-full max-w-md items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-400 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-500">
+                    <Search size={16} />
+                    <input
+                      placeholder="搜索项目..."
+                      className="w-full bg-transparent text-sm text-slate-700 outline-none dark:text-slate-200"
+                    />
                   </div>
-                  <div className="mt-8 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-slate-200 py-12 text-center">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
-                      <FolderOpen size={26} className="text-slate-400" />
-                    </div>
-                    <p className="text-sm font-medium text-slate-600">
+                  <button className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300">
+                    全部状态
+                    <ChevronDown size={16} className="text-slate-400 dark:text-slate-500" />
+                  </button>
+                  <button className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300">
+                    全部优先级
+                    <ChevronDown size={16} className="text-slate-400 dark:text-slate-500" />
+                  </button>
+                </div>
+
+                <div className="flex min-h-[420px] flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-slate-200 bg-white text-center shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                    <FolderOpen size={30} className="text-slate-400 dark:text-slate-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-base font-semibold text-slate-800 dark:text-slate-100">
                       暂无项目
                     </p>
-                    <Button className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500">
-                      创建首个项目
-                    </Button>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      创建你的第一个项目开始使用
+                    </p>
                   </div>
+                  <Button className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500">
+                    <Plus size={16} className="mr-2" />
+                    创建项目
+                  </Button>
+                </div>
+              </section>
+            ) : activeNav === 'team' ? (
+              <section className="space-y-8">
+                <div className="flex flex-wrap items-start justify-between gap-6">
+                  <div>
+                    <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                      团队
+                    </h1>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      管理团队成员及其贡献
+                    </p>
+                  </div>
+                  <Button className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500">
+                    <Users size={16} className="mr-2" />
+                    邀请成员
+                  </Button>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-slate-800">
-                      最近动态
-                    </h2>
-                  </div>
-                  <div className="mt-8 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-slate-200 py-12 text-center">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
-                      <Timer size={26} className="text-slate-400" />
+                <div className="grid gap-4 md:grid-cols-3">
+                  {[
+                    {
+                      title: '成员总数',
+                      value: '1',
+                      icon: <Users size={18} className="text-blue-600" />,
+                      color: 'bg-blue-50 dark:bg-blue-500/20',
+                    },
+                    {
+                      title: '进行中项目',
+                      value: '0',
+                      icon: <Timer size={18} className="text-emerald-600" />,
+                      color: 'bg-emerald-50 dark:bg-emerald-500/20',
+                    },
+                    {
+                      title: '任务总数',
+                      value: '0',
+                      icon: <CheckCircle2 size={18} className="text-purple-600" />,
+                      color: 'bg-purple-50 dark:bg-purple-500/20',
+                    },
+                  ].map((card) => (
+                    <div
+                      key={card.title}
+                      className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60"
+                    >
+                      <div>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          {card.title}
+                        </p>
+                        <p className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-100">
+                          {card.value}
+                        </p>
+                      </div>
+                      <div
+                        className={`flex h-10 w-10 items-center justify-center rounded-2xl ${card.color}`}
+                      >
+                        {card.icon}
+                      </div>
                     </div>
-                    <p className="text-sm text-slate-400">暂无动态</p>
-                  </div>
+                  ))}
                 </div>
-              </div>
 
-              <div className="space-y-6">
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-                      <Users size={16} className="text-slate-400" />
-                      我的任务
+                <div className="flex w-full max-w-lg items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-400 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-500">
+                  <Search size={16} />
+                  <input
+                    placeholder="搜索团队成员..."
+                    className="w-full bg-transparent text-sm text-slate-700 outline-none dark:text-slate-200"
+                  />
+                </div>
+
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+                  <div className="grid grid-cols-[1.2fr_1.6fr_0.8fr] border-b border-slate-200 px-6 py-3 text-sm font-semibold text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                    <span>姓名</span>
+                    <span>邮箱</span>
+                    <span>角色</span>
+                  </div>
+                  <div className="grid grid-cols-[1.2fr_1.6fr_0.8fr] items-center px-6 py-4 text-sm text-slate-600 dark:text-slate-300">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-600 text-sm font-semibold text-white">
+                        Ji
+                      </div>
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">李祎</span>
                     </div>
-                    <span className="rounded-lg bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-600">
-                      0
+                    <span>hopskyline@gmail.com</span>
+                    <span className="inline-flex w-fit rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-600 dark:bg-purple-500/20 dark:text-purple-200">
+                      管理员
                     </span>
                   </div>
-                  <p className="mt-6 text-center text-sm text-slate-400">
-                    暂无任务
-                  </p>
+                </div>
+              </section>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <h1 className="text-2xl font-semibold dark:text-slate-100">
+                      欢迎回来，Ji Li
+                    </h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      这里是你今天项目的最新动态
+                    </p>
+                  </div>
+                  <Button className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500">
+                    + 新建项目
+                  </Button>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-                      <CircleAlert size={16} className="text-slate-400" />
-                      逾期
+                <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  {[
+                    {
+                      title: '项目总数',
+                      value: '0',
+                      desc: '测试组织内项目数',
+                      icon: <FolderOpen size={18} className="text-blue-600" />,
+                      color: 'bg-blue-50 dark:bg-blue-500/20',
+                    },
+                    {
+                      title: '已完成项目',
+                      value: '0',
+                      desc: '共 0 个',
+                      icon: (
+                        <CheckCircle2 size={18} className="text-emerald-600" />
+                      ),
+                      color: 'bg-emerald-50 dark:bg-emerald-500/20',
+                    },
+                    {
+                      title: '我的任务',
+                      value: '0',
+                      desc: '分配给我',
+                      icon: <Users size={18} className="text-purple-600" />,
+                      color: 'bg-purple-50 dark:bg-purple-500/20',
+                    },
+                    {
+                      title: '逾期',
+                      value: '0',
+                      desc: '需要关注',
+                      icon: <CircleAlert size={18} className="text-amber-600" />,
+                      color: 'bg-amber-50 dark:bg-amber-500/20',
+                    },
+                  ].map((card) => (
+                    <div
+                      key={card.title}
+                      className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-slate-500 dark:text-slate-400">
+                          {card.title}
+                        </div>
+                        <div
+                          className={`flex h-9 w-9 items-center justify-center rounded-full ${card.color}`}
+                        >
+                          {card.icon}
+                        </div>
+                      </div>
+                      <div className="mt-3 text-2xl font-semibold dark:text-slate-100">
+                        {card.value}
+                      </div>
+                      <div className="text-xs text-slate-400 dark:text-slate-500">
+                        {card.desc}
+                      </div>
                     </div>
-                    <span className="rounded-lg bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-600">
-                      0
-                    </span>
-                  </div>
-                  <p className="mt-6 text-center text-sm text-slate-400">
-                    暂无逾期
-                  </p>
-                </div>
+                  ))}
+                </section>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-                      <Timer size={16} className="text-slate-400" />
-                      进行中
+                <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
+                  <div className="space-y-6">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                          项目概览
+                        </h2>
+                        <button className="text-sm text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300">
+                          查看全部 →
+                        </button>
+                      </div>
+                      <div className="mt-8 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-slate-200 py-12 text-center dark:border-slate-800">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                          <FolderOpen size={26} className="text-slate-400 dark:text-slate-500" />
+                        </div>
+                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                          暂无项目
+                        </p>
+                        <Button className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500">
+                          创建首个项目
+                        </Button>
+                      </div>
                     </div>
-                    <span className="rounded-lg bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600">
-                      0
-                    </span>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                          最近动态
+                        </h2>
+                      </div>
+                      <div className="mt-8 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-slate-200 py-12 text-center dark:border-slate-800">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                          <Timer size={26} className="text-slate-400 dark:text-slate-500" />
+                        </div>
+                        <p className="text-sm text-slate-400 dark:text-slate-500">暂无动态</p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="mt-6 text-center text-sm text-slate-400">
-                    暂无进行中
-                  </p>
-                </div>
-              </div>
-            </section>
+
+                  <div className="space-y-6">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                          <Users size={16} className="text-slate-400 dark:text-slate-500" />
+                          我的任务
+                        </div>
+                        <span className="rounded-lg bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-200">
+                          0
+                        </span>
+                      </div>
+                      <p className="mt-6 text-center text-sm text-slate-400 dark:text-slate-500">
+                        暂无任务
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                          <CircleAlert size={16} className="text-slate-400 dark:text-slate-500" />
+                          逾期
+                        </div>
+                        <span className="rounded-lg bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-600 dark:bg-rose-500/20 dark:text-rose-200">
+                          0
+                        </span>
+                      </div>
+                      <p className="mt-6 text-center text-sm text-slate-400 dark:text-slate-500">
+                        暂无逾期
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                          <Timer size={16} className="text-slate-400 dark:text-slate-500" />
+                          进行中
+                        </div>
+                        <span className="rounded-lg bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 dark:bg-blue-500/20 dark:text-blue-200">
+                          0
+                        </span>
+                      </div>
+                      <p className="mt-6 text-center text-sm text-slate-400 dark:text-slate-500">
+                        暂无进行中
+                      </p>
+                    </div>
+                  </div>
+                </section>
+              </>
+            )}
           </main>
         </div>
       </div>

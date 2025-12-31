@@ -1,31 +1,7 @@
 @import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
-  :root {
-    color-scheme: light;
-    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-    line-height: 1.5;
-    font-weight: 400;
-    color: #0b0d12;
-    background-color: #f6f7f4;
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  html,
-  body,
-  #root {
-    height: 100%;
-  }
-
-  body {
-    margin: 0;
-    background-color: #f6f7f4;
-    overflow-x: hidden;
-  }
-
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
@@ -33,5 +9,14 @@
     -webkit-box-shadow: 0 0 0 1000px #f7f7f8 inset;
     -webkit-text-fill-color: #0b0d12;
     caret-color: #0b0d12;
+  }
+
+  .dark input:-webkit-autofill,
+  .dark input:-webkit-autofill:hover,
+  .dark input:-webkit-autofill:focus,
+  .dark input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #0f172a inset;
+    -webkit-text-fill-color: #e2e8f0;
+    caret-color: #e2e8f0;
   }
 }

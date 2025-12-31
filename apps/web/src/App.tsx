@@ -6,6 +6,17 @@ import { LoginPage } from './components/login-page'
 import { RegisterPage } from './components/register-page'
 
 function App() {
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('theme')
+    const prefersDark =
+      window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches
+    const shouldUseDark = storedTheme
+      ? storedTheme === 'dark'
+      : prefersDark
+    document.documentElement.classList.toggle('dark', shouldUseDark)
+  }, [])
+
   return (
     <BrowserRouter>
       <Routes>
@@ -82,7 +93,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (isChecking) {
     return (
-      <div className="flex min-h-screen min-h-[100svh] items-center justify-center text-sm text-[#596172]">
+      <div className="flex min-h-screen min-h-[100svh] items-center justify-center text-sm text-[#596172] dark:bg-[#0b0f1a] dark:text-slate-400">
         正在验证登录状态...
       </div>
     )

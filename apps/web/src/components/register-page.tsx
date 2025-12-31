@@ -51,26 +51,26 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen min-h-[100svh] w-full items-center justify-center overflow-x-hidden bg-[radial-gradient(circle_at_10%_20%,#f7f0e8_0%,#f2efe9_35%,#f6f7f4_100%)] px-[6vw] py-[clamp(2rem,5vh,3.5rem)] text-[#0b0d12]">
+    <div className="relative flex min-h-screen min-h-[100svh] w-full items-center justify-center overflow-x-hidden bg-[radial-gradient(circle_at_10%_20%,#f7f0e8_0%,#f2efe9_35%,#f6f7f4_100%)] px-[6vw] py-[clamp(2rem,5vh,3.5rem)] text-[#0b0d12] dark:bg-[radial-gradient(circle_at_10%_20%,#0f172a_0%,#0b0f1a_45%,#0b0f1a_100%)] dark:text-slate-100">
       <motion.section
-        className="w-full max-w-[460px] rounded-[2rem] border border-black/5 bg-white p-12 shadow-[0_30px_80px_rgba(15,23,42,0.18)]"
+        className="w-full max-w-[460px] rounded-[2rem] border border-black/5 bg-white p-12 shadow-[0_30px_80px_rgba(15,23,42,0.18)] dark:border-slate-800 dark:bg-[#0f172a]"
         initial={{ opacity: 0, y: 32 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
       >
         <div className="space-y-3">
-          <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#1c7c8c]">
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#1c7c8c] dark:text-teal-300">
             创建账号
           </p>
-          <h2 className="text-3xl font-semibold text-[#0b0d12]">
+          <h2 className="text-3xl font-semibold text-[#0b0d12] dark:text-slate-100">
             注册你的工作区
           </h2>
-          <p className="text-sm text-[#596172]">
+          <p className="text-sm text-[#596172] dark:text-slate-400">
             已有账号？
             <Button
               asChild
               variant="link"
-              className="h-auto p-0 pl-2 text-sm font-semibold text-[#1c7c8c]"
+              className="h-auto p-0 pl-2 text-sm font-semibold text-[#1c7c8c] dark:text-teal-300"
             >
               <Link to="/login">去登录</Link>
             </Button>
@@ -79,34 +79,34 @@ export function RegisterPage() {
 
         <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-semibold text-[#1c2333]">
+            <Label htmlFor="name" className="text-sm font-semibold text-[#1c2333] dark:text-slate-200">
               姓名
             </Label>
-            <div className="flex items-center gap-2 rounded-[0.9rem] border border-black/10 bg-[#f7f7f8] px-4 py-3">
-              <User size={18} className="text-[#7b8496]" />
+            <div className="flex items-center gap-2 rounded-[0.9rem] border border-black/10 bg-[#f7f7f8] px-4 py-3 dark:border-slate-700 dark:bg-[#0f172a]">
+              <User size={18} className="text-[#7b8496] dark:text-slate-400" />
               <Input
                 id="name"
                 name="name"
                 type="text"
                 placeholder="你的姓名"
-                className="h-auto border-0 bg-transparent p-0 text-base focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-auto border-0 bg-transparent p-0 text-base text-[#0b0d12] focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-transparent dark:text-slate-100"
                 required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-semibold text-[#1c2333]">
+            <Label htmlFor="email" className="text-sm font-semibold text-[#1c2333] dark:text-slate-200">
               邮箱
             </Label>
-            <div className="flex items-center gap-2 rounded-[0.9rem] border border-black/10 bg-[#f7f7f8] px-4 py-3">
-              <Mail size={18} className="text-[#7b8496]" />
+            <div className="flex items-center gap-2 rounded-[0.9rem] border border-black/10 bg-[#f7f7f8] px-4 py-3 dark:border-slate-700 dark:bg-[#0f172a]">
+              <Mail size={18} className="text-[#7b8496] dark:text-slate-400" />
               <Input
                 id="email"
                 name="email"
                 type="email"
                 placeholder="you@team.com"
-                className="h-auto border-0 bg-transparent p-0 text-base focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-auto border-0 bg-transparent p-0 text-base text-[#0b0d12] focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-transparent dark:text-slate-100"
                 required
               />
             </div>
@@ -115,25 +115,25 @@ export function RegisterPage() {
           <div className="space-y-2">
             <Label
               htmlFor="password"
-              className="text-sm font-semibold text-[#1c2333]"
+              className="text-sm font-semibold text-[#1c2333] dark:text-slate-200"
             >
               密码
             </Label>
-            <div className="flex items-center gap-2 rounded-[0.9rem] border border-black/10 bg-[#f7f7f8] px-4 py-3">
-              <Lock size={18} className="text-[#7b8496]" />
+            <div className="flex items-center gap-2 rounded-[0.9rem] border border-black/10 bg-[#f7f7f8] px-4 py-3 dark:border-slate-700 dark:bg-[#0f172a]">
+              <Lock size={18} className="text-[#7b8496] dark:text-slate-400" />
               <Input
                 id="password"
                 name="password"
                 type="password"
                 placeholder="至少 8 位字符"
-                className="h-auto border-0 bg-transparent p-0 text-base focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="h-auto border-0 bg-transparent p-0 text-base text-[#0b0d12] focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-transparent dark:text-slate-100"
                 required
               />
             </div>
           </div>
 
           {status === 'error' ? (
-            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
               {errorMessage}
             </p>
           ) : null}

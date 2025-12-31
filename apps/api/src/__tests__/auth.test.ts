@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { inArray, like } from "drizzle-orm";
 import { createApp } from "../app";
+import { SignJWT } from "jose";
 import { db } from "../db";
 import { organizationMembers, users } from "../schema";
 
@@ -36,6 +37,15 @@ async function postJson(path: string, body: unknown) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+async function signToken(id: number) {
+  const secret = process.env.JWT_SECRET ?? "test-secret";
+  return new SignJWT({ sub: String(id) })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("1s")
+    .sign(new TextEncoder().encode(secret));
 }
 
 beforeAll(async () => {
@@ -111,6 +121,25 @@ describe("auth", () => {
     expect(data.message).toBe("Invalid email or password.");
   });
 
+  it("rejects invalid register payload", async () => {
+    const response = await postJson("/auth/register", {
+      name: "",
+      email: "not-an-email",
+      password: "short",
+    });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("rejects invalid login payload", async () => {
+    const response = await postJson("/auth/login", {
+      email: "bad-email",
+      password: "short",
+    });
+
+    expect(response.status).toBe(400);
+  });
+
   it("requires auth for /auth/me", async () => {
     const response = await app.request("/auth/me", { method: "GET" });
     expect(response.status).toBe(401);
@@ -138,5 +167,26 @@ describe("auth", () => {
     const data = await meResponse.json();
     expect(data.user.email).toBe(email);
     expect(data.user.lastOrganizationId).toBeNull();
+  });
+
+  it("rejects /auth/me with expired token", async () => {
+    const email = uniqueEmail();
+    const registerResponse = await postJson("/auth/register", {
+      name: "Test User",
+      email,
+      password: "password123",
+    });
+
+    const data = await registerResponse.json();
+    const token = await signToken(data.user.id);
+
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+
+    const response = await app.request("/auth/me", {
+      method: "GET",
+      headers: { Cookie: `auth_token=${token}` },
+    });
+
+    expect(response.status).toBe(401);
   });
 });

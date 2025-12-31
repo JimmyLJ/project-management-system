@@ -176,6 +176,32 @@ describe("organizations", () => {
     expect(response.status).toBe(413);
   });
 
+  it("rejects duplicate slug", async () => {
+    const { cookie } = await registerAndGetCookie();
+    const slug = `test-org-${Date.now()}`;
+    const form = new FormData();
+    form.append("name", "Test Org");
+    form.append("slug", slug);
+
+    const first = await app.request("/orgs", {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: form,
+    });
+    expect(first.status).toBe(200);
+
+    const secondForm = new FormData();
+    secondForm.append("name", "Test Org 2");
+    secondForm.append("slug", slug);
+    const second = await app.request("/orgs", {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: secondForm,
+    });
+
+    expect(second.status).toBe(409);
+  });
+
   it("rejects invalid organization payload", async () => {
     const { cookie } = await registerAndGetCookie();
     const form = new FormData();
@@ -203,6 +229,19 @@ describe("organizations", () => {
     const data = await response.json();
     expect(Array.isArray(data.organizations)).toBe(true);
     expect(data.organizations).toHaveLength(0);
+  });
+
+  it("returns null for orgs/mine when user has no organization", async () => {
+    const { cookie } = await registerAndGetCookie();
+
+    const response = await app.request("/orgs/mine", {
+      method: "GET",
+      headers: { Cookie: cookie },
+    });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.organization).toBeNull();
   });
 
   it("returns organization for current user", async () => {
@@ -250,6 +289,49 @@ describe("organizations", () => {
     expect(Array.isArray(data.organizations)).toBe(true);
     expect(data.organizations.length).toBe(1);
     expect(data.organizations[0].slug).toContain("test-org-");
+  });
+
+  it("sets active org for member and rejects non-member", async () => {
+    const { cookie } = await registerAndGetCookie();
+    const form = new FormData();
+    form.append("name", "Test Org");
+    form.append("slug", `test-org-${Date.now()}`);
+
+    const createResponse = await app.request("/orgs", {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: form,
+    });
+    const createData = await createResponse.json();
+
+    const activeResponse = await app.request("/orgs/active", {
+      method: "POST",
+      headers: { Cookie: cookie, "Content-Type": "application/json" },
+      body: JSON.stringify({ orgId: createData.organization.id }),
+    });
+
+    expect(activeResponse.status).toBe(200);
+
+    const { cookie: otherCookie } = await registerAndGetCookie();
+    const forbidden = await app.request("/orgs/active", {
+      method: "POST",
+      headers: { Cookie: otherCookie, "Content-Type": "application/json" },
+      body: JSON.stringify({ orgId: createData.organization.id }),
+    });
+
+    expect(forbidden.status).toBe(403);
+  });
+
+  it("rejects invalid orgId for active org", async () => {
+    const { cookie } = await registerAndGetCookie();
+
+    const response = await app.request("/orgs/active", {
+      method: "POST",
+      headers: { Cookie: cookie, "Content-Type": "application/json" },
+      body: JSON.stringify({ orgId: "not-a-number" }),
+    });
+
+    expect(response.status).toBe(400);
   });
 
   it("exposes last organization id in /auth/me", async () => {

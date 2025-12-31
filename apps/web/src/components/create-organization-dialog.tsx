@@ -108,26 +108,26 @@ export function CreateOrganizationDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="relative w-full max-w-[460px] min-h-[560px] rounded-[2rem] border border-black/5 bg-white p-12 shadow-[0_30px_80px_rgba(15,23,42,0.18)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 dark:bg-black/60">
+      <div className="relative w-full max-w-[460px] min-h-[560px] rounded-[2rem] border border-black/5 bg-white p-12 shadow-[0_30px_80px_rgba(15,23,42,0.18)] dark:border-slate-800 dark:bg-[#0f172a]">
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
+          className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
           aria-label="关闭"
         >
           <X size={16} />
         </button>
         <div className="flex min-h-[464px] flex-col justify-center">
-          <h2 className="text-2xl font-semibold text-[#0b0d12]">创建组织</h2>
+          <h2 className="text-2xl font-semibold text-[#0b0d12] dark:text-slate-100">创建组织</h2>
 
           <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <Label htmlFor="logo" className="text-sm font-semibold text-[#1c2333]">
+              <Label htmlFor="logo" className="text-sm font-semibold text-[#1c2333] dark:text-slate-200">
                 组织 Logo
               </Label>
               <div className="flex items-center gap-6">
-                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-[#f7f7f8]">
+                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-[#f7f7f8] dark:border-slate-700 dark:bg-slate-900/70">
                   {logoPreview ? (
                     <img
                       src={logoPreview}
@@ -135,7 +135,7 @@ export function CreateOrganizationDialog({
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <ImagePlus size={20} className="text-slate-400" />
+                    <ImagePlus size={20} className="text-slate-400 dark:text-slate-500" />
                   )}
                 </div>
                 <div>
@@ -152,7 +152,7 @@ export function CreateOrganizationDialog({
                   <Button
                     type="button"
                     onClick={() => logoInputRef.current?.click()}
-                    className="h-9 rounded-full bg-slate-100 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-200"
+                    className="h-9 rounded-full bg-slate-100 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                   >
                     上传
                   </Button>
@@ -160,25 +160,27 @@ export function CreateOrganizationDialog({
                     <Button
                       type="button"
                       variant="link"
-                      className="h-auto p-0 text-sm font-semibold text-slate-500 hover:text-slate-700"
+                      className="h-auto p-0 text-sm font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                       onClick={handleRemoveLogo}
                     >
                       移除
                     </Button>
                   ) : null}
                 </div>
-                  <p className="mt-2 text-xs text-slate-400">
+                  <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
                     推荐比例 1:1，最大 10MB
                   </p>
                   {logoError ? (
-                    <p className="mt-2 text-xs text-red-600">{logoError}</p>
+                    <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                      {logoError}
+                    </p>
                   ) : null}
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-semibold text-[#1c2333]">
+              <Label htmlFor="name" className="text-sm font-semibold text-[#1c2333] dark:text-slate-200">
                 组织名称
               </Label>
               <Input
@@ -190,7 +192,7 @@ export function CreateOrganizationDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="slug" className="text-sm font-semibold text-[#1c2333]">
+              <Label htmlFor="slug" className="text-sm font-semibold text-[#1c2333] dark:text-slate-200">
                 唯一标识
               </Label>
               <Input
@@ -199,13 +201,13 @@ export function CreateOrganizationDialog({
                 placeholder="例如：acme-team"
                 required
               />
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-400 dark:text-slate-500">
                 仅支持小写字母、数字与中横线。
               </p>
             </div>
 
             {status === 'error' ? (
-              <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
                 {errorMessage}
               </p>
             ) : null}
