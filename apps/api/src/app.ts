@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { setCookie } from "hono/cookie";
+import { deleteCookie, setCookie } from "hono/cookie";
 import { jwt } from "hono/jwt";
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -163,6 +163,13 @@ export function createApp() {
         email: userRecord.email,
       },
     });
+  });
+
+  app.post("/auth/logout", (c) => {
+    deleteCookie(c, "auth_token", {
+      path: "/",
+    });
+    return c.json({ ok: true });
   });
 
   const jwtSecret = process.env.JWT_SECRET ?? "";

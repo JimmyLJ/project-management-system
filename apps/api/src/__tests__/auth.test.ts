@@ -140,6 +140,15 @@ describe("auth", () => {
     expect(response.status).toBe(400);
   });
 
+  it("clears auth cookie on logout", async () => {
+    const response = await app.request("/auth/logout", {
+      method: "POST",
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("set-cookie")).toContain("auth_token=");
+  });
+
   it("requires auth for /auth/me", async () => {
     const response = await app.request("/auth/me", { method: "GET" });
     expect(response.status).toBe(401);

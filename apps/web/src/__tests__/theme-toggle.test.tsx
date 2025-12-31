@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { DashboardPage } from '../components/dashboard-page'
 
 function mockOrganizationsFetch() {
@@ -20,7 +21,11 @@ afterEach(() => {
 describe('Theme toggle', () => {
   it('toggles dark mode and persists preference', async () => {
     const fetchMock = mockOrganizationsFetch()
-    render(<DashboardPage />)
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>,
+    )
     await waitFor(() => expect(fetchMock).toHaveBeenCalled())
 
     const toggle = screen.getByLabelText('切换到深色模式')

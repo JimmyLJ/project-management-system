@@ -6,15 +6,18 @@ import {
   Folder,
   FolderOpen,
   LayoutGrid,
+  LogOut,
   Moon,
   Plus,
   Search,
   Settings,
   Sun,
   Timer,
+  UserRound,
   Users,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { CreateOrganizationDialog } from './create-organization-dialog'
 import { SettingsDialog } from './settings-dialog'
 import { Button } from './ui/button'
@@ -22,6 +25,7 @@ import { Button } from './ui/button'
 type DashboardNav = 'dashboard' | 'projects' | 'team' | 'settings'
 
 export function DashboardPage() {
+  const navigate = useNavigate()
   const [organizations, setOrganizations] = useState<
     { id: number; name: string; logoUrl: string | null }[]
   >([])
@@ -31,7 +35,9 @@ export function DashboardPage() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [activeNav, setActiveNav] = useState<DashboardNav>('dashboard')
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const workspaceMenuRef = useRef<HTMLDivElement | null>(null)
+  const accountMenuRef = useRef<HTMLDivElement | null>(null)
 
   const normalizeLogoUrl = (logoUrl: string | null) => {
     if (!logoUrl) return null
@@ -66,6 +72,31 @@ export function DashboardPage() {
       document.removeEventListener('keydown', handleKeyDown)
     }
   }, [workspaceMenuOpen])
+
+  useEffect(() => {
+    if (!accountMenuOpen) return
+
+    const handleClick = (event: MouseEvent) => {
+      if (!accountMenuRef.current) return
+      if (!accountMenuRef.current.contains(event.target as Node)) {
+        setAccountMenuOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setAccountMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [accountMenuOpen])
 
   const loadOrganizations = useCallback(async () => {
     try {
@@ -368,8 +399,67 @@ export function DashboardPage() {
               >
                 {isDarkMode ? <Sun size={18} className="text-amber-300" /> : <Moon size={18} />}
               </button>
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-500 text-sm font-semibold text-white">
-                Ji
+              <div className="relative" ref={accountMenuRef}>
+                <button
+                  type="button"
+                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-teal-500 text-sm font-semibold text-white"
+                  onClick={() => setAccountMenuOpen((prev) => !prev)}
+                  aria-haspopup="menu"
+                  aria-expanded={accountMenuOpen}
+                >
+                  Ji
+                </button>
+                {accountMenuOpen ? (
+                  <div className="absolute right-0 top-full z-20 mt-3 w-[280px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.18)] dark:border-slate-800 dark:bg-[#0f172a]">
+                    <div className="flex items-center gap-4 px-5 py-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-500 text-sm font-semibold text-white">
+                        Ji
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          李祎
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          hopskyline@gmail.com
+                        </p>
+                      </div>
+                    </div>
+                    <div className="h-px bg-slate-200/70 dark:bg-slate-800/60" />
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-3 px-5 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                      onClick={() => {
+                        setAccountMenuOpen(false)
+                        setSettingsOpen(true)
+                      }}
+                    >
+                      <UserRound size={16} className="text-slate-400 dark:text-slate-500" />
+                      账户设置
+                    </button>
+                    <div className="h-px bg-slate-200/70 dark:bg-slate-800/60" />
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-3 px-5 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                      onClick={async () => {
+                        try {
+                          await fetch(
+                            `${import.meta.env.VITE_API_BASE_URL}/auth/logout`,
+                            { method: 'POST', credentials: 'include' },
+                          )
+                        } catch {
+                          // Ignore logout failures; still exit client session.
+                        } finally {
+                          setAccountMenuOpen(false)
+                          navigate('/login')
+                        }
+                      }}
+                    >
+                      <LogOut size={16} className="text-slate-400 dark:text-slate-500" />
+                      退出登录
+                    </button>
+                    <div className="bg-gradient-to-r from-slate-50 to-white px-5 py-4 dark:from-slate-900/80 dark:to-slate-900" />
+                  </div>
+                ) : null}
               </div>
             </div>
           </header>
