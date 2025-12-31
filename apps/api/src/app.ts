@@ -2,12 +2,15 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { setCookie } from "hono/cookie";
 import { jwt } from "hono/jwt";
+import { existsSync } from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
+import { extname, join } from "node:path";
 import { SignJWT } from "jose";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "./db";
-import { users } from "./schema";
+import { organizationMembers, organizations, users } from "./schema";
 
 const registerSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -18,6 +21,17 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.string().trim().email().max(320),
   password: z.string().min(8).max(200),
+});
+
+const organizationSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  slug: z
+    .string()
+    .trim()
+    .min(2)
+    .max(80)
+    .regex(/^[a-z0-9-]+$/),
+  logoUrl: z.string().trim().url().optional().nullable(),
 });
 
 export function createApp() {
@@ -163,6 +177,145 @@ export function createApp() {
       return c.json({ user: payload });
     });
   }
+
+  if (!jwtSecret) {
+    app.use("/orgs/*", (c) =>
+      c.json({ message: "JWT_SECRET is not configured." }, 500),
+    );
+  } else {
+    app.use("/orgs/*", jwt({ secret: jwtSecret, cookie: "auth_token" }));
+  }
+
+  app.get("/orgs/mine", async (c) => {
+    const payload = c.get("jwtPayload");
+    const userId = Number(payload?.sub);
+    if (!userId) {
+      return c.json({ message: "Unauthorized." }, 401);
+    }
+
+    const rows = await db
+      .select({
+        id: organizations.id,
+        name: organizations.name,
+        slug: organizations.slug,
+        logoUrl: organizations.logoUrl,
+      })
+      .from(organizationMembers)
+      .innerJoin(
+        organizations,
+        eq(organizationMembers.organizationId, organizations.id),
+      )
+      .where(eq(organizationMembers.userId, userId))
+      .limit(1);
+
+    const organization = rows[0] ?? null;
+    return c.json({ organization });
+  });
+
+  app.post("/orgs", async (c) => {
+    const authPayload = c.get("jwtPayload");
+    const userId = Number(authPayload?.sub);
+    if (!userId) {
+      return c.json({ message: "Unauthorized." }, 401);
+    }
+
+    const uploadDir = join(process.cwd(), "uploads");
+    if (!existsSync(uploadDir)) {
+      await mkdir(uploadDir, { recursive: true });
+    }
+
+    const formData = await c.req.formData();
+    const name = formData.get("name");
+    const slugValue = formData.get("slug");
+    const logo = formData.get("logo");
+
+    const payload = organizationSchema.safeParse({
+      name: typeof name === "string" ? name : "",
+      slug: typeof slugValue === "string" ? slugValue : "",
+      logoUrl: undefined,
+    });
+
+    if (!payload.success) {
+      return c.json({ message: "Invalid organization data." }, 400);
+    }
+
+    const existingMember = await db
+      .select({ id: organizationMembers.id })
+      .from(organizationMembers)
+      .where(eq(organizationMembers.userId, userId))
+      .limit(1);
+
+    if (existingMember.length > 0) {
+      return c.json({ message: "Organization already exists." }, 409);
+    }
+
+    const slug = payload.data.slug.toLowerCase();
+    const existingOrg = await db
+      .select({ id: organizations.id })
+      .from(organizations)
+      .where(eq(organizations.slug, slug))
+      .limit(1);
+
+    if (existingOrg.length > 0) {
+      return c.json({ message: "Slug already in use." }, 409);
+    }
+
+    const file =
+      typeof File !== "undefined" && logo instanceof File ? logo : null;
+    let logoUrl: string | null = null;
+
+    if (file) {
+      const type = file.type?.toLowerCase() ?? "";
+      if (!["image/png", "image/jpeg"].includes(type)) {
+        return c.json({ message: "Logo must be PNG or JPG." }, 400);
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        return c.json({ message: "Logo file is too large." }, 413);
+      }
+
+      const ext = extname(file.name || "");
+      const targetName = `org-${Date.now()}${ext}`;
+      const targetPath = join(uploadDir, targetName);
+      const buffer = Buffer.from(await file.arrayBuffer());
+      await writeFile(targetPath, buffer);
+      logoUrl = `/uploads/${targetName}`;
+    }
+
+    const result = await db.transaction(async (tx) => {
+      const inserted = await tx
+        .insert(organizations)
+        .values({
+          name: payload.data.name,
+          slug,
+          logoUrl,
+        })
+        .returning({
+          id: organizations.id,
+          name: organizations.name,
+          slug: organizations.slug,
+          logoUrl: organizations.logoUrl,
+        });
+
+      const org = inserted[0];
+      if (!org) {
+        return null;
+      }
+
+      await tx.insert(organizationMembers).values({
+        userId,
+        organizationId: org.id,
+        role: "owner",
+      });
+
+      return org;
+    });
+
+    if (!result) {
+      return c.json({ message: "Organization creation failed." }, 500);
+    }
+
+    return c.json({ organization: result });
+  });
 
   return app;
 }

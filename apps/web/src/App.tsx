@@ -31,6 +31,7 @@ export default App
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [isChecking, setIsChecking] = useState(true)
   const [isAuthed, setIsAuthed] = useState(false)
+  const [needsOrgSetup, setNeedsOrgSetup] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -42,10 +43,30 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
           { credentials: 'include' },
         )
         if (!active) return
-        setIsAuthed(response.ok)
+        if (!response.ok) {
+          setIsAuthed(false)
+          setNeedsOrgSetup(false)
+          return
+        }
+
+        const orgResponse = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/orgs/mine`,
+          { credentials: 'include' },
+        )
+        if (!active) return
+        const data = (await orgResponse.json()) as { organization?: unknown }
+        if (!orgResponse.ok || !data.organization) {
+          setIsAuthed(false)
+          setNeedsOrgSetup(true)
+          return
+        }
+
+        setIsAuthed(true)
+        setNeedsOrgSetup(false)
       } catch {
         if (!active) return
         setIsAuthed(false)
+        setNeedsOrgSetup(false)
       } finally {
         if (!active) return
         setIsChecking(false)
@@ -68,7 +89,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthed) {
-    return <Navigate to="/login" replace />
+    return (
+      <Navigate to={needsOrgSetup ? '/login?setup=1' : '/login'} replace />
+    )
   }
 
   return <>{children}</>

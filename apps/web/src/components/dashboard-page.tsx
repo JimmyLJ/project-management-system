@@ -11,18 +11,63 @@ import {
   Timer,
   Users,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Button } from './ui/button'
 
 export function DashboardPage() {
+  const [organizationName, setOrganizationName] = useState('测试组织')
+  const [organizationLogoUrl, setOrganizationLogoUrl] = useState<string | null>(
+    null,
+  )
+
+  useEffect(() => {
+    const loadOrganization = async () => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/orgs/mine`,
+          { credentials: 'include' },
+        )
+        if (!response.ok) return
+        const data = (await response.json()) as {
+          organization?: { name?: string | null; logoUrl?: string | null } | null
+        }
+        if (!data.organization) return
+        const name = data.organization.name?.trim()
+        if (name) {
+          setOrganizationName(name)
+        }
+        const logoUrl = data.organization.logoUrl?.trim() ?? ''
+        if (logoUrl) {
+          const normalized = logoUrl.startsWith('/')
+            ? `${import.meta.env.VITE_API_BASE_URL}${logoUrl}`
+            : logoUrl
+          setOrganizationLogoUrl(normalized)
+        }
+      } catch {
+        // Ignore organization fetch failures in the dashboard chrome.
+      }
+    }
+
+    loadOrganization()
+  }, [])
+
   return (
     <div className="min-h-screen bg-[#f6f7fb] text-[#101828]">
       <div className="flex min-h-screen">
         <aside className="flex w-64 flex-col border-r border-slate-200 bg-white px-5 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-slate-200" />
+              <div className="h-10 w-10 overflow-hidden rounded-full bg-slate-200">
+                {organizationLogoUrl ? (
+                  <img
+                    src={organizationLogoUrl}
+                    alt={`${organizationName} Logo`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : null}
+              </div>
               <div>
-                <p className="text-sm font-semibold">测试组织</p>
+                <p className="text-sm font-semibold">{organizationName}</p>
                 <p className="text-xs text-slate-500">1 个工作区</p>
               </div>
             </div>

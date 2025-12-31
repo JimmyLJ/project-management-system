@@ -8,6 +8,13 @@
       "when": 1767067054176,
       "tag": "0000_shiny_killmonger",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1767082000000,
+      "tag": "0001_create_organizations",
+      "breakpoints": true
     }
   ]
 }

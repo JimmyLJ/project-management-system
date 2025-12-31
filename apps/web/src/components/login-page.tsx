@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Lock, Mail } from 'lucide-react'
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { CreateOrganizationDialog } from './create-organization-dialog'
 import { Button } from './ui/button'
 import { Checkbox } from './ui/checkbox'
 import { Input } from './ui/input'
@@ -9,8 +10,48 @@ import { Label } from './ui/label'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [needsOrganization, setNeedsOrganization] = useState(false)
+
+  useEffect(() => {
+    const shouldCheck = searchParams.get('setup') === '1'
+    if (!shouldCheck) return
+
+    let active = true
+
+    const verifyOrganization = async () => {
+      try {
+        const authResponse = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/auth/me`,
+          { credentials: 'include' },
+        )
+        if (!active || !authResponse.ok) return
+
+        const orgResponse = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/orgs/mine`,
+          { credentials: 'include' },
+        )
+        if (!active) return
+
+        const data = (await orgResponse.json()) as { organization?: unknown }
+        if (orgResponse.ok && data.organization) {
+          navigate('/dashboard')
+        } else {
+          setNeedsOrganization(true)
+        }
+      } catch {
+        if (!active) return
+      }
+    }
+
+    verifyOrganization()
+
+    return () => {
+      active = false
+    }
+  }, [navigate, searchParams])
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -43,7 +84,21 @@ export function LoginPage() {
         return
       }
 
-      navigate('/dashboard')
+      const orgResponse = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/orgs/mine`,
+        { credentials: 'include' },
+      )
+
+      if (orgResponse.ok) {
+        const data = (await orgResponse.json()) as { organization?: unknown }
+        if (data.organization) {
+          navigate('/dashboard')
+        } else {
+          setNeedsOrganization(true)
+        }
+      } else {
+        setNeedsOrganization(true)
+      }
     } catch (error) {
       setStatus('error')
       setErrorMessage('网络异常，请检查后重试。')
@@ -52,6 +107,15 @@ export function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen min-h-[100svh] w-full items-center justify-center overflow-x-hidden bg-[radial-gradient(circle_at_10%_20%,#f7f0e8_0%,#f2efe9_35%,#f6f7f4_100%)] px-[6vw] py-[clamp(2rem,5vh,3.5rem)] text-[#0b0d12]">
+      <CreateOrganizationDialog
+        open={needsOrganization}
+        onCreated={() => navigate('/dashboard')}
+        onClose={() => {
+          setNeedsOrganization(false)
+          setStatus('idle')
+          setErrorMessage('')
+        }}
+      />
       <motion.section
         className="w-full max-w-[460px] rounded-[2rem] border border-black/5 bg-white p-12 shadow-[0_30px_80px_rgba(15,23,42,0.18)]"
         initial={{ opacity: 0, y: 32 }}
