@@ -78,11 +78,12 @@ export function TopBar({ onLogout, onOpenSettings }: TopBarProps) {
         <div className="relative" ref={accountMenuRef}>
           <button
             type="button"
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-teal-500 text-sm font-semibold text-white"
+            className="group relative flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-teal-500 text-sm font-semibold text-white"
             onClick={() => setAccountMenuOpen((prev) => !prev)}
             aria-haspopup="menu"
             aria-expanded={accountMenuOpen}
           >
+            <span className="pointer-events-none absolute -left-10 top-1/2 h-12 w-6 -translate-y-1/2 rotate-45 bg-white/70 opacity-0 blur-[1px] transition duration-500 group-hover:translate-x-24 group-hover:opacity-100" />
             Ji
           </button>
           {accountMenuOpen ? (

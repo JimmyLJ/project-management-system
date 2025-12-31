@@ -53,7 +53,7 @@ export function ForgotPasswordPage() {
             </div>
           </div>
 
-          <Button className="h-12 w-full rounded-full bg-gradient-to-r from-[#ff6a3d] to-[#ff9a5f] text-base font-bold text-[#151515] shadow-[0_10px_30px_rgba(255,106,61,0.35)] hover:opacity-90">
+          <Button className="h-12 w-full rounded-full bg-blue-600 text-base font-semibold text-white hover:bg-blue-500">
             发送重置链接
           </Button>
         </form>

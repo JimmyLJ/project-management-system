@@ -6,17 +6,21 @@
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
   input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px #f7f7f8 inset;
-    -webkit-text-fill-color: #0b0d12;
-    caret-color: #0b0d12;
+    -webkit-box-shadow: 0 0 0 1000px #f7f7f8 inset !important;
+    -webkit-text-fill-color: #0b0d12 !important;
+    background-color: transparent !important;
+    caret-color: #0b0d12 !important;
+    transition: background-color 9999s ease-in-out 0s;
   }
 
   .dark input:-webkit-autofill,
   .dark input:-webkit-autofill:hover,
   .dark input:-webkit-autofill:focus,
   .dark input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px #0f172a inset;
-    -webkit-text-fill-color: #e2e8f0;
-    caret-color: #e2e8f0;
+    -webkit-box-shadow: 0 0 0 1000px #0f172a inset !important;
+    -webkit-text-fill-color: #e2e8f0 !important;
+    background-color: transparent !important;
+    caret-color: #e2e8f0 !important;
+    transition: background-color 9999s ease-in-out 0s;
   }
 }
