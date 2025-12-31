@@ -1,25 +1,20 @@
 import {
-  Check,
-  CheckCircle2,
   ChevronDown,
+  CheckCircle2,
   CircleAlert,
-  Folder,
   FolderOpen,
-  LayoutGrid,
-  LogOut,
-  Moon,
   Plus,
   Search,
-  Settings,
-  Sun,
   Timer,
-  UserRound,
   Users,
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CreateOrganizationDialog } from './create-organization-dialog'
+import { OrganizationSwitcher } from './organization-switcher'
 import { SettingsDialog } from './settings-dialog'
+import { SidebarNav } from './sidebar-nav'
+import { TopBar } from './top-bar'
 import { Button } from './ui/button'
 
 type DashboardNav = 'dashboard' | 'projects' | 'team' | 'settings'
@@ -30,14 +25,9 @@ export function DashboardPage() {
     { id: number; name: string; logoUrl: string | null }[]
   >([])
   const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null)
-  const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false)
   const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [activeNav, setActiveNav] = useState<DashboardNav>('dashboard')
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
-  const workspaceMenuRef = useRef<HTMLDivElement | null>(null)
-  const accountMenuRef = useRef<HTMLDivElement | null>(null)
 
   const normalizeLogoUrl = (logoUrl: string | null) => {
     if (!logoUrl) return null
@@ -47,56 +37,6 @@ export function DashboardPage() {
       ? `${import.meta.env.VITE_API_BASE_URL}${trimmed}`
       : trimmed
   }
-
-  useEffect(() => {
-    if (!workspaceMenuOpen) return
-
-    const handleClick = (event: MouseEvent) => {
-      if (!workspaceMenuRef.current) return
-      if (!workspaceMenuRef.current.contains(event.target as Node)) {
-        setWorkspaceMenuOpen(false)
-      }
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setWorkspaceMenuOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClick)
-    document.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      document.removeEventListener('mousedown', handleClick)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [workspaceMenuOpen])
-
-  useEffect(() => {
-    if (!accountMenuOpen) return
-
-    const handleClick = (event: MouseEvent) => {
-      if (!accountMenuRef.current) return
-      if (!accountMenuRef.current.contains(event.target as Node)) {
-        setAccountMenuOpen(false)
-      }
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setAccountMenuOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClick)
-    document.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      document.removeEventListener('mousedown', handleClick)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [accountMenuOpen])
 
   const loadOrganizations = useCallback(async () => {
     try {
@@ -132,37 +72,18 @@ export function DashboardPage() {
     loadOrganizations()
   }, [loadOrganizations])
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const storedTheme = localStorage.getItem('theme')
-    const prefersDark =
-      window.matchMedia &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches
-    const shouldUseDark = storedTheme
-      ? storedTheme === 'dark'
-      : prefersDark
-    setIsDarkMode(shouldUseDark)
-    document.documentElement.classList.toggle('dark', shouldUseDark)
-  }, [])
-
-  const handleToggleTheme = () => {
-    setIsDarkMode((prev) => {
-      const next = !prev
-      document.documentElement.classList.toggle('dark', next)
-      localStorage.setItem('theme', next ? 'dark' : 'light')
-      return next
-    })
+  const handleLogout = async () => {
+    try {
+      await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+    } catch {
+      // Ignore logout failures; still exit client session.
+    } finally {
+      navigate('/login')
+    }
   }
-
-  const selectedOrg =
-    organizations.find((org) => org.id === selectedOrgId) ?? null
-  const organizationName = selectedOrg?.name ?? '测试组织'
-  const organizationLogoUrl = selectedOrg?.logoUrl ?? null
-  const orgInitial = (() => {
-    const trimmed = organizationName.trim()
-    if (!trimmed) return ''
-    return /[a-z]/i.test(trimmed[0]) ? trimmed[0].toUpperCase() : trimmed[0]
-  })()
 
   return (
     <div className="min-h-screen bg-[#f6f7fb] text-[#101828] dark:bg-[#0b0f1a] dark:text-slate-100">
@@ -178,291 +99,25 @@ export function DashboardPage() {
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <div className="flex min-h-screen">
         <aside className="flex w-64 flex-col border-r border-slate-200 bg-white px-5 py-6 dark:border-slate-800 dark:bg-[#0f172a]">
-          <div className="relative" ref={workspaceMenuRef}>
-            <button
-              type="button"
-              className={`flex w-full items-center justify-between rounded-xl px-2 py-2 transition hover:bg-slate-50 cursor-pointer dark:hover:bg-slate-800 ${
-                workspaceMenuOpen ? 'bg-slate-100 dark:bg-slate-800' : ''
-              }`}
-              onClick={() => setWorkspaceMenuOpen((prev) => !prev)}
-              aria-haspopup="menu"
-              aria-expanded={workspaceMenuOpen}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-slate-200 text-xs font-semibold text-slate-400 dark:bg-slate-800 dark:text-slate-500">
-                  {organizationLogoUrl ? (
-                    <img
-                      src={organizationLogoUrl}
-                      alt={`${organizationName} Logo`}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    orgInitial
-                  )}
-                </div>
-                <div className="space-y-0.5 text-left">
-                  <p className="text-sm font-semibold">{organizationName}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {organizations.length} 个工作区
-                  </p>
-                </div>
-              </div>
-              <ChevronDown
-                size={16}
-                className={`text-slate-400 transition dark:text-slate-500 ${
-                  workspaceMenuOpen ? 'rotate-180' : ''
-                }`}
-              />
-            </button>
-            {workspaceMenuOpen ? (
-              <div className="absolute left-0 top-full z-20 mt-2 w-full min-w-[220px] rounded-xl border border-slate-200 bg-white p-2 shadow-[0_12px_30px_rgba(15,23,42,0.12)] dark:border-slate-800 dark:bg-[#0f172a]">
-                <div className="px-3 pb-2 pt-1 text-[11px] font-semibold tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                  工作区
-                </div>
-                {organizations.length > 0 ? (
-                  <div className="space-y-1">
-                    {organizations.map((org) => {
-                      const isSelected = org.id === selectedOrgId
-                      const initial = org.name.trim()
-                        ? /[a-z]/i.test(org.name.trim()[0])
-                          ? org.name.trim()[0].toUpperCase()
-                          : org.name.trim()[0]
-                        : ''
-                      return (
-                        <button
-                          key={org.id}
-                          type="button"
-                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left hover:bg-slate-50 cursor-pointer dark:hover:bg-slate-800 ${
-                            isSelected ? 'bg-slate-50 dark:bg-slate-800' : ''
-                          }`}
-                          onClick={() => setSelectedOrgId(org.id)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-slate-200 text-xs font-semibold text-slate-400 dark:bg-slate-800 dark:text-slate-500">
-                              {org.logoUrl ? (
-                                <img
-                                  src={org.logoUrl}
-                                  alt={`${org.name} Logo`}
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                initial
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                                {org.name}
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">
-                                1 名成员
-                              </p>
-                            </div>
-                          </div>
-                          {isSelected ? (
-                            <Check size={16} className="text-blue-600 dark:text-blue-400" />
-                          ) : null}
-                        </button>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <div className="px-3 py-2 text-xs text-slate-400 dark:text-slate-500">
-                    暂无工作区
-                  </div>
-                )}
-                <div className="my-2 h-px bg-slate-200 dark:bg-slate-800" />
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50 cursor-pointer dark:text-blue-400 dark:hover:bg-slate-800"
-                  onClick={() => {
-                    setCreateWorkspaceOpen(true)
-                    setWorkspaceMenuOpen(false)
-                  }}
-                >
-                  <Plus size={16} />
-                  新建工作区
-                </button>
-              </div>
-            ) : null}
-          </div>
+          <OrganizationSwitcher
+            organizations={organizations}
+            selectedOrgId={selectedOrgId}
+            onSelectOrg={setSelectedOrgId}
+            onOpenCreateWorkspace={() => setCreateWorkspaceOpen(true)}
+          />
 
-          <nav className="mt-8 space-y-1 text-sm">
-            <button
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 font-semibold ${
-                activeNav === 'dashboard'
-                  ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
-                  : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
-              }`}
-              data-testid="nav-dashboard"
-              onClick={() => setActiveNav('dashboard')}
-            >
-              <LayoutGrid
-                size={18}
-                className={
-                  activeNav === 'dashboard'
-                    ? 'text-slate-700 dark:text-slate-200'
-                    : 'text-slate-500 dark:text-slate-400'
-                }
-              />
-              仪表盘
-            </button>
-            <button
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 font-semibold ${
-                activeNav === 'projects'
-                  ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
-                  : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
-              }`}
-              data-testid="nav-projects"
-              onClick={() => setActiveNav('projects')}
-            >
-              <Folder
-                size={18}
-                className={
-                  activeNav === 'projects'
-                    ? 'text-slate-700 dark:text-slate-200'
-                    : 'text-slate-500 dark:text-slate-400'
-                }
-              />
-              项目
-            </button>
-            <button
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 font-semibold ${
-                activeNav === 'team'
-                  ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
-                  : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
-              }`}
-              data-testid="nav-team"
-              onClick={() => setActiveNav('team')}
-            >
-              <Users
-                size={18}
-                className={
-                  activeNav === 'team'
-                    ? 'text-slate-700 dark:text-slate-200'
-                    : 'text-slate-500 dark:text-slate-400'
-                }
-              />
-              团队
-            </button>
-            <button
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 font-semibold ${
-                activeNav === 'settings'
-                  ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
-                  : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800'
-              }`}
-              onClick={() => setSettingsOpen(true)}
-              data-testid="nav-settings"
-            >
-              <Settings
-                size={18}
-                className={
-                  activeNav === 'settings'
-                    ? 'text-slate-700 dark:text-slate-200'
-                    : 'text-slate-500 dark:text-slate-400'
-                }
-              />
-              设置
-            </button>
-          </nav>
-
-          <div className="mt-8 border-t border-slate-200 pt-6 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
-            <div className="flex items-center justify-between rounded-lg px-3 py-2">
-              <span className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-slate-400 dark:text-slate-500" />
-                我的任务
-              </span>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
-                0
-              </span>
-            </div>
-            <div className="mt-6 flex items-center justify-between px-3 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-              <span>项目</span>
-              <span className="text-base">+</span>
-            </div>
-          </div>
+          <SidebarNav
+            activeNav={activeNav}
+            onChangeNav={setActiveNav}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
         </aside>
 
         <div className="flex flex-1 flex-col">
-          <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-8 dark:border-slate-800 dark:bg-[#0f172a]">
-            <div className="flex w-full max-w-md items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-400 dark:border-slate-700 dark:bg-slate-900/60">
-              <Search size={16} />
-              <input
-                placeholder="搜索项目、任务..."
-                className="w-full bg-transparent text-sm text-slate-700 outline-none dark:text-slate-200"
-              />
-            </div>
-            <div className="ml-6 flex items-center gap-4">
-              <button
-                className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-transform hover:scale-105 dark:border-slate-700 dark:text-slate-300"
-                onClick={handleToggleTheme}
-                aria-label={isDarkMode ? '切换到浅色模式' : '切换到深色模式'}
-              >
-                {isDarkMode ? <Sun size={18} className="text-amber-300" /> : <Moon size={18} />}
-              </button>
-              <div className="relative" ref={accountMenuRef}>
-                <button
-                  type="button"
-                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-teal-500 text-sm font-semibold text-white"
-                  onClick={() => setAccountMenuOpen((prev) => !prev)}
-                  aria-haspopup="menu"
-                  aria-expanded={accountMenuOpen}
-                >
-                  Ji
-                </button>
-                {accountMenuOpen ? (
-                  <div className="absolute right-0 top-full z-20 mt-3 w-[280px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.18)] dark:border-slate-800 dark:bg-[#0f172a]">
-                    <div className="flex items-center gap-4 px-5 py-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-500 text-sm font-semibold text-white">
-                        Ji
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                          李祎
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          hopskyline@gmail.com
-                        </p>
-                      </div>
-                    </div>
-                    <div className="h-px bg-slate-200/70 dark:bg-slate-800/60" />
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-3 px-5 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                      onClick={() => {
-                        setAccountMenuOpen(false)
-                        setSettingsOpen(true)
-                      }}
-                    >
-                      <UserRound size={16} className="text-slate-400 dark:text-slate-500" />
-                      账户设置
-                    </button>
-                    <div className="h-px bg-slate-200/70 dark:bg-slate-800/60" />
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-3 px-5 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                      onClick={async () => {
-                        try {
-                          await fetch(
-                            `${import.meta.env.VITE_API_BASE_URL}/auth/logout`,
-                            { method: 'POST', credentials: 'include' },
-                          )
-                        } catch {
-                          // Ignore logout failures; still exit client session.
-                        } finally {
-                          setAccountMenuOpen(false)
-                          navigate('/login')
-                        }
-                      }}
-                    >
-                      <LogOut size={16} className="text-slate-400 dark:text-slate-500" />
-                      退出登录
-                    </button>
-                    <div className="bg-gradient-to-r from-slate-50 to-white px-5 py-4 dark:from-slate-900/80 dark:to-slate-900" />
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </header>
+          <TopBar
+            onLogout={handleLogout}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
 
           <main className="flex-1 space-y-6 px-8 py-8">
             {activeNav === 'projects' ? (
