@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   name: varchar("name", { length: 200 }).notNull(),
   email: varchar("email", { length: 320 }).notNull().unique(),
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  lastOrganizationId: integer("last_organization_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

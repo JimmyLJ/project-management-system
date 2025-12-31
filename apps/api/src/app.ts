@@ -6,7 +6,7 @@ import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { SignJWT } from "jose";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "./db";
@@ -172,10 +172,35 @@ export function createApp() {
       c.json({ message: "JWT_SECRET is not configured." }, 500),
     );
   } else {
-    app.get("/auth/me", jwt({ secret: jwtSecret, cookie: "auth_token" }), (c) => {
-      const payload = c.get("jwtPayload");
-      return c.json({ user: payload });
-    });
+    app.get(
+      "/auth/me",
+      jwt({ secret: jwtSecret, cookie: "auth_token" }),
+      async (c) => {
+        const payload = c.get("jwtPayload");
+        const userId = Number(payload?.sub);
+        if (!userId) {
+          return c.json({ message: "Unauthorized." }, 401);
+        }
+
+        const records = await db
+          .select({
+            id: users.id,
+            name: users.name,
+            email: users.email,
+            lastOrganizationId: users.lastOrganizationId,
+          })
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1);
+
+        const user = records[0];
+        if (!user) {
+          return c.json({ message: "Unauthorized." }, 401);
+        }
+
+        return c.json({ user });
+      },
+    );
   }
 
   if (!jwtSecret) {
@@ -212,6 +237,66 @@ export function createApp() {
     return c.json({ organization });
   });
 
+  app.get("/orgs", async (c) => {
+    const payload = c.get("jwtPayload");
+    const userId = Number(payload?.sub);
+    if (!userId) {
+      return c.json({ message: "Unauthorized." }, 401);
+    }
+
+    const rows = await db
+      .select({
+        id: organizations.id,
+        name: organizations.name,
+        slug: organizations.slug,
+        logoUrl: organizations.logoUrl,
+      })
+      .from(organizationMembers)
+      .innerJoin(
+        organizations,
+        eq(organizationMembers.organizationId, organizations.id),
+      )
+      .where(eq(organizationMembers.userId, userId));
+
+    return c.json({ organizations: rows });
+  });
+
+  app.post("/orgs/active", async (c) => {
+    const payload = c.get("jwtPayload");
+    const userId = Number(payload?.sub);
+    if (!userId) {
+      return c.json({ message: "Unauthorized." }, 401);
+    }
+
+    const body = await c.req.json().catch(() => null);
+    const orgId = Number(body?.orgId);
+    if (!orgId) {
+      return c.json({ message: "Invalid organization." }, 400);
+    }
+
+    const membership = await db
+      .select({ id: organizationMembers.id })
+      .from(organizationMembers)
+      .where(
+        and(
+          eq(organizationMembers.userId, userId),
+          eq(organizationMembers.organizationId, orgId),
+        ),
+      )
+      .limit(1);
+
+    if (membership.length === 0) {
+      return c.json({ message: "Forbidden." }, 403);
+    }
+
+    await db
+      .update(users)
+      .set({ lastOrganizationId: orgId })
+      .where(eq(users.id, userId));
+
+    return c.json({ ok: true });
+  });
+
   app.post("/orgs", async (c) => {
     const authPayload = c.get("jwtPayload");
     const userId = Number(authPayload?.sub);
@@ -237,16 +322,6 @@ export function createApp() {
 
     if (!payload.success) {
       return c.json({ message: "Invalid organization data." }, 400);
-    }
-
-    const existingMember = await db
-      .select({ id: organizationMembers.id })
-      .from(organizationMembers)
-      .where(eq(organizationMembers.userId, userId))
-      .limit(1);
-
-    if (existingMember.length > 0) {
-      return c.json({ message: "Organization already exists." }, 409);
     }
 
     const slug = payload.data.slug.toLowerCase();
@@ -306,6 +381,11 @@ export function createApp() {
         organizationId: org.id,
         role: "owner",
       });
+
+      await tx
+        .update(users)
+        .set({ lastOrganizationId: org.id })
+        .where(eq(users.id, userId));
 
       return org;
     });

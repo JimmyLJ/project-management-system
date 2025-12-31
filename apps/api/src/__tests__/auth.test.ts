@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { like } from "drizzle-orm";
+import { inArray, like } from "drizzle-orm";
 import { createApp } from "../app";
 import { db } from "../db";
-import { users } from "../schema";
+import { organizationMembers, users } from "../schema";
 
 let app: ReturnType<typeof createApp>;
 
@@ -11,6 +11,16 @@ function uniqueEmail() {
 }
 
 async function cleanup() {
+  const userIds = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(like(users.email, "test+%@example.com"));
+  const ids = userIds.map((row) => row.id);
+  if (ids.length > 0) {
+    await db
+      .delete(organizationMembers)
+      .where(inArray(organizationMembers.userId, ids));
+  }
   await db.delete(users).where(like(users.email, "test+%@example.com"));
 }
 
@@ -86,6 +96,8 @@ describe("auth", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("set-cookie")).toContain("auth_token=");
+    const data = await response.json();
+    expect(data.user.email).toBe(email);
   });
 
   it("rejects invalid login", async () => {
@@ -95,6 +107,8 @@ describe("auth", () => {
     });
 
     expect(response.status).toBe(401);
+    const data = await response.json();
+    expect(data.message).toBe("Invalid email or password.");
   });
 
   it("requires auth for /auth/me", async () => {
@@ -123,5 +137,6 @@ describe("auth", () => {
     expect(meResponse.status).toBe(200);
     const data = await meResponse.json();
     expect(data.user.email).toBe(email);
+    expect(data.user.lastOrganizationId).toBeNull();
   });
 });

@@ -1,5 +1,8 @@
+import { existsSync } from "node:fs";
+import { unlink } from "node:fs/promises";
+import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { inArray, like, or } from "drizzle-orm";
+import { and, eq, inArray, like, or } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { createApp } from "../app";
 import { db } from "../db";
@@ -91,7 +94,7 @@ afterAll(async () => {
 
 describe("organizations", () => {
   it("creates organization with logo", async () => {
-    const { cookie } = await registerAndGetCookie();
+    const { cookie, email } = await registerAndGetCookie();
     const form = new FormData();
     form.append("name", "Test Org");
     form.append("slug", `test-org-${Date.now()}`);
@@ -108,6 +111,31 @@ describe("organizations", () => {
     const data = await response.json();
     expect(data.organization.slug).toContain("test-org-");
     expect(data.organization.logoUrl).toContain("/uploads/");
+
+    const relativePath = String(data.organization.logoUrl).replace(/^\//, "");
+    const logoPath = join(process.cwd(), relativePath);
+    expect(existsSync(logoPath)).toBe(true);
+    await unlink(logoPath);
+
+    const userRows = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+    const userId = userRows[0]?.id;
+    expect(userId).toBeTruthy();
+
+    const membership = await db
+      .select({ id: organizationMembers.id })
+      .from(organizationMembers)
+      .where(
+        and(
+          eq(organizationMembers.userId, Number(userId)),
+          eq(organizationMembers.organizationId, data.organization.id),
+        ),
+      )
+      .limit(1);
+    expect(membership.length).toBe(1);
   });
 
   it("rejects invalid logo type", async () => {
@@ -148,6 +176,35 @@ describe("organizations", () => {
     expect(response.status).toBe(413);
   });
 
+  it("rejects invalid organization payload", async () => {
+    const { cookie } = await registerAndGetCookie();
+    const form = new FormData();
+    form.append("name", "Test Org");
+    form.append("slug", "Invalid Slug");
+
+    const response = await app.request("/orgs", {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: form,
+    });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("returns empty organization list for new user", async () => {
+    const { cookie } = await registerAndGetCookie();
+
+    const response = await app.request("/orgs", {
+      method: "GET",
+      headers: { Cookie: cookie },
+    });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(Array.isArray(data.organizations)).toBe(true);
+    expect(data.organizations).toHaveLength(0);
+  });
+
   it("returns organization for current user", async () => {
     const { cookie } = await registerAndGetCookie();
     const form = new FormData();
@@ -168,5 +225,53 @@ describe("organizations", () => {
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(data.organization).toBeTruthy();
+  });
+
+  it("returns organization list for current user", async () => {
+    const { cookie } = await registerAndGetCookie();
+    const form = new FormData();
+    form.append("name", "Test Org");
+    form.append("slug", `test-org-${Date.now()}`);
+
+    const createResponse = await app.request("/orgs", {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: form,
+    });
+    expect(createResponse.status).toBe(200);
+
+    const response = await app.request("/orgs", {
+      method: "GET",
+      headers: { Cookie: cookie },
+    });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(Array.isArray(data.organizations)).toBe(true);
+    expect(data.organizations.length).toBe(1);
+    expect(data.organizations[0].slug).toContain("test-org-");
+  });
+
+  it("exposes last organization id in /auth/me", async () => {
+    const { cookie } = await registerAndGetCookie();
+    const form = new FormData();
+    form.append("name", "Test Org");
+    form.append("slug", `test-org-${Date.now()}`);
+
+    const createResponse = await app.request("/orgs", {
+      method: "POST",
+      headers: { Cookie: cookie },
+      body: form,
+    });
+
+    const createData = await createResponse.json();
+    const response = await app.request("/auth/me", {
+      method: "GET",
+      headers: { Cookie: cookie },
+    });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.user.lastOrganizationId).toBe(createData.organization.id);
   });
 });
