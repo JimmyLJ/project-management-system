@@ -1,0 +1,11 @@
+{
+  "name": "project-management-system",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "dev:web": "pnpm --filter @pms/web dev",
+    "dev:api": "pnpm --filter @pms/api dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test"
+  }
+}
