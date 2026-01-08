@@ -9,8 +9,7 @@
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
     "rootDirs": [
-      ".",
-      "./.react-router/types"
+      "."
     ],
     "types": [
       "vite/client"
@@ -18,12 +17,11 @@
     "baseUrl": ".",
     "paths": {
       "~/*": [
-        "./app/*"
+        "./src/*"
       ]
     }
   },
   "include": [
-    "app",
-    ".react-router/types/**/*"
+    "src"
   ]
 }

@@ -1,0 +1,21 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+:root {
+  --dash-bg: #f5f7fb;
+  --dash-card: #ffffff;
+  --dash-border: #e6ebf2;
+  --dash-muted: #6b7280;
+  --dash-text: #0f172a;
+  --dash-primary: #2563eb;
+  --dash-primary-strong: #1d4ed8;
+  --dash-success: #16a34a;
+  --dash-warning: #f97316;
+  --dash-danger: #ef4444;
+}
+
+body {
+  font-family: "Plus Jakarta Sans", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background-color: var(--dash-bg);
+  color: var(--dash-text);
+}
