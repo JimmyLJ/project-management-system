@@ -1,5 +1,7 @@
 import { Moon, Search, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuthSession, useSignOut } from "~/features/auth/hooks";
 
 const THEME_STORAGE_KEY = "pms-theme";
 
@@ -21,6 +23,13 @@ const getInitialTheme = (): Theme => {
 export default function Topbar() {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const isDark = theme === "dark";
+  const navigate = useNavigate();
+  const { data: session } = useAuthSession();
+  const signOutMutation = useSignOut();
+  const displayName = session?.user?.name || session?.user?.email || "访客";
+  const initialsSource = displayName.includes("@") ? displayName.split("@")[0] : displayName;
+  const initials = initialsSource.slice(0, 2);
+  const canSignOut = Boolean(session?.user);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -28,6 +37,14 @@ export default function Topbar() {
     root.style.colorScheme = theme;
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [isDark, theme]);
+
+  const handleSignOut = () => {
+    signOutMutation.mutate(undefined, {
+      onSuccess: () => {
+        navigate("/login", { replace: true });
+      },
+    });
+  };
 
   return (
     <header className="flex flex-col gap-2 border-b border-[var(--dash-border)] pb-3 lg:flex-row lg:items-center lg:justify-between">
@@ -50,8 +67,16 @@ export default function Topbar() {
         >
           {isDark ? <Sun className="h-5 w-5 text-amber-300" /> : <Moon className="h-5 w-5" />}
         </button>
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-500 text-sm font-semibold text-white">
-          Ji
+        <button
+          type="button"
+          onClick={handleSignOut}
+          disabled={!canSignOut || signOutMutation.isPending}
+          className="rounded-lg border border-[var(--dash-border)] bg-[var(--dash-card)] px-3 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400 dark:text-slate-300 dark:hover:bg-slate-800/70"
+        >
+          退出登录
+        </button>
+        <div className="flex h-8 min-w-[2rem] items-center justify-center rounded-full bg-teal-500 px-2 text-sm font-semibold text-white">
+          {initials}
         </div>
       </div>
     </header>
