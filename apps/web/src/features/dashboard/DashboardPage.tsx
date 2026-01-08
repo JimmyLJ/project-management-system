@@ -41,7 +41,7 @@ export default function DashboardPage() {
       <section className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-[var(--dash-text)]">欢迎回来，Ji Li</h1>
-          <p className="mt-2 text-sm text-slate-500">看看你今天项目的最新动态</p>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">看看你今天项目的最新动态</p>
         </div>
         <button className="inline-flex items-center gap-2 rounded-lg bg-[var(--dash-primary)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--dash-primary-strong)]">
           <Plus className="h-4 w-4" />
