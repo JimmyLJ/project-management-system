@@ -15,6 +15,13 @@
       "when": 1767868009937,
       "tag": "0001_chunky_lila_cheney",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1767923812142,
+      "tag": "0002_keen_adam_warlock",
+      "breakpoints": true
     }
   ]
 }

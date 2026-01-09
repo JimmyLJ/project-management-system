@@ -1,30 +1,36 @@
 import { CheckSquare, ChevronRight, Folder, LayoutDashboard, List, Settings, Users } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import WorkspaceSelector from "~/features/workspace/WorkspaceSelector";
+import type { Workspace } from "~/features/workspace/types";
 
-const navItems = [
-  { label: "仪表盘", icon: LayoutDashboard, to: "/" },
-  { label: "项目", icon: Folder, to: "/projects" },
-  { label: "团队", icon: Users, to: "/teams" },
-  { label: "设置", icon: Settings }
-];
+type SidebarProps = {
+  workspaces: Workspace[];
+  currentWorkspace?: Workspace;
+  isLoading: boolean;
+};
 
-export default function Sidebar() {
+export default function Sidebar({ workspaces, currentWorkspace, isLoading }: SidebarProps) {
+  const basePath = currentWorkspace ? `/w/${currentWorkspace.slug}` : "";
+  const navItems = [
+    { label: "仪表盘", icon: LayoutDashboard, to: basePath || undefined, end: true },
+    { label: "项目", icon: Folder, to: basePath ? `${basePath}/projects` : undefined },
+    { label: "团队", icon: Users, to: basePath ? `${basePath}/teams` : undefined },
+    { label: "设置", icon: Settings }
+  ];
+
   return (
     <aside className="fixed left-0 top-0 flex h-full w-64 flex-col border-r border-[var(--dash-border)] bg-[var(--dash-card)]">
-      <div className="flex items-center gap-3 border-b border-[var(--dash-border)] px-6 py-5">
-        <div className="h-10 w-10 overflow-hidden rounded-lg bg-slate-200 dark:bg-slate-800">
-          <div className="h-full w-full bg-slate-300 dark:bg-slate-700" />
-        </div>
-        <div className="flex-1">
-          <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">测试组织1</div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">1 个工作区</div>
-        </div>
-        <ChevronRight className="h-4 w-4 rotate-90 text-slate-400 dark:text-slate-500" />
-      </div>
+      <WorkspaceSelector workspaces={workspaces} currentWorkspace={currentWorkspace} isLoading={isLoading} />
 
       <nav className="flex-1 space-y-1 px-4 py-5">
         {navItems.map((item) => (
-          <NavItem key={item.label} label={item.label} icon={<item.icon className="h-5 w-5" />} to={item.to} />
+          <NavItem
+            key={item.label}
+            label={item.label}
+            icon={<item.icon className="h-5 w-5" />}
+            to={item.to}
+            end={item.end}
+          />
         ))}
 
         <div className="pt-8">
@@ -49,13 +55,15 @@ function NavItem({
   label,
   to,
   badge,
-  withChevron
+  withChevron,
+  end,
 }: {
   icon: React.ReactNode;
   label: string;
   to?: string;
   badge?: string;
   withChevron?: boolean;
+  end?: boolean;
 }) {
   const baseClass = "flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 transition";
   const activeClass = "bg-slate-100 text-slate-900 dark:bg-slate-800/60 dark:text-slate-100";
@@ -81,7 +89,7 @@ function NavItem({
 
   if (to) {
     return (
-      <NavLink to={to} end={to === "/"} className={({ isActive }) => `${baseClass} ${isActive ? activeClass : inactiveClass}`}>
+      <NavLink to={to} end={end} className={({ isActive }) => `${baseClass} ${isActive ? activeClass : inactiveClass}`}>
         {content}
       </NavLink>
     );

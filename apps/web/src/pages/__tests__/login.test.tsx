@@ -34,7 +34,7 @@ const renderLogin = (state?: unknown) => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<div>Home</div>} />
-          <Route path="/projects" element={<div>Projects</div>} />
+          <Route path="/w/:workspaceSlug/projects" element={<div>Projects</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -128,7 +128,7 @@ describe("Login page", () => {
     useAuthSessionMock.mockReturnValue({ data: null, isLoading: false } as AuthSessionQuery);
     signInWithEmailMock.mockResolvedValue({ user: { id: "user-1" } } as Awaited<SignInReturn>);
 
-    const { queryClient } = renderLogin({ from: { pathname: "/projects" } });
+    const { queryClient } = renderLogin({ from: { pathname: "/w/test/projects" } });
     const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries").mockResolvedValue();
 
     const user = userEvent.setup();

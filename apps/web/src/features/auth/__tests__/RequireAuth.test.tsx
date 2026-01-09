@@ -25,10 +25,10 @@ describe("RequireAuth", () => {
     useAuthSessionMock.mockReturnValue({ data: null, isLoading: true } as AuthSessionQuery);
 
     render(
-      <MemoryRouter initialEntries={["/projects"]}>
+      <MemoryRouter initialEntries={["/w/test/projects"]}>
         <Routes>
           <Route
-            path="/projects"
+            path="/w/:workspaceSlug/projects"
             element={
               <RequireAuth>
                 <div>Protected</div>
@@ -46,11 +46,11 @@ describe("RequireAuth", () => {
     useAuthSessionMock.mockReturnValue({ data: null, isLoading: false } as AuthSessionQuery);
 
     render(
-      <MemoryRouter initialEntries={["/projects"]}>
+      <MemoryRouter initialEntries={["/w/test/projects"]}>
         <Routes>
           <Route path="/login" element={<LoginSpy />} />
           <Route
-            path="/projects"
+            path="/w/:workspaceSlug/projects"
             element={
               <RequireAuth>
                 <div>Protected</div>
@@ -61,7 +61,7 @@ describe("RequireAuth", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("Login /projects")).toBeInTheDocument();
+    expect(await screen.findByText("Login /w/test/projects")).toBeInTheDocument();
   });
 
   it("已登录时渲染子内容", () => {
@@ -70,10 +70,10 @@ describe("RequireAuth", () => {
     );
 
     render(
-      <MemoryRouter initialEntries={["/projects"]}>
+      <MemoryRouter initialEntries={["/w/test/projects"]}>
         <Routes>
           <Route
-            path="/projects"
+            path="/w/:workspaceSlug/projects"
             element={
               <RequireAuth>
                 <div>Protected</div>
