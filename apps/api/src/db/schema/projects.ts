@@ -1,5 +1,5 @@
 import { pgTable, uuid, varchar, text, timestamp, date, unique } from 'drizzle-orm/pg-core'
-import { users } from './users'
+import { authUsers } from './auth'
 import { workspaces } from './workspaces'
 
 export const projects = pgTable('projects', {
@@ -11,7 +11,7 @@ export const projects = pgTable('projects', {
   priority: varchar('priority', { length: 20 }).notNull().default('medium'),
   startDate: date('start_date'),
   endDate: date('end_date'),
-  createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdBy: text('created_by').notNull().references(() => authUsers.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
@@ -19,7 +19,7 @@ export const projects = pgTable('projects', {
 export const projectMembers = pgTable('project_members', {
   id: uuid('id').primaryKey().defaultRandom(),
   projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => authUsers.id, { onDelete: 'cascade' }),
   role: varchar('role', { length: 20 }).notNull().default('member'),
   joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [

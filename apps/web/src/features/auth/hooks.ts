@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authKeys, getSession, signOut } from "./api";
+import { clearStoredWorkspaceSlug } from "~/features/workspace/storage";
 
 export const useAuthSession = () =>
   useQuery({
@@ -15,6 +16,7 @@ export const useSignOut = () => {
   return useMutation({
     mutationFn: signOut,
     onSuccess: () => {
+      clearStoredWorkspaceSlug();
       queryClient.clear();
     },
   });

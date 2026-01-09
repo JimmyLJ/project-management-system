@@ -16,7 +16,7 @@ export const getSession = async () => {
   }
 };
 
-export const signOut = async () => apiRequest<void>("/api/auth/sign-out", { method: "POST" });
+export const signOut = async () => apiRequest<void>("/api/auth/sign-out", { method: "POST", json: {} });
 
 export const signInWithEmail = async (payload: { email: string; password: string }) =>
   apiRequest<AuthSession>("/api/auth/sign-in/email", {

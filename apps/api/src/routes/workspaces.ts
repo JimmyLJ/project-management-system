@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
-import { eq, or } from 'drizzle-orm'
+import { and, eq, or } from 'drizzle-orm'
 import { db } from '../db'
-import { workspaces, workspaceMembers } from '../db/schema'
+import { authUsers, workspaces, workspaceMembers } from '../db/schema'
 import { auth } from '../auth'
 
 const workspacesRouter = new Hono()
@@ -37,6 +37,67 @@ workspacesRouter.get('/me', async (c) => {
   )
 
   return c.json({ workspaces: uniqueWorkspaces })
+})
+
+workspacesRouter.get('/:workspaceId/members', async (c) => {
+  const session = await auth.api.getSession({ headers: c.req.raw.headers })
+  if (!session?.user) {
+    return c.json({ message: '未登录' }, 401)
+  }
+
+  const workspaceId = c.req.param('workspaceId')
+  if (!workspaceId) {
+    return c.json({ message: 'workspaceId 是必填项' }, 400)
+  }
+
+  const access = await db
+    .select({ id: workspaces.id })
+    .from(workspaces)
+    .leftJoin(workspaceMembers, eq(workspaceMembers.workspaceId, workspaces.id))
+    .where(
+      and(
+        eq(workspaces.id, workspaceId),
+        or(
+          eq(workspaces.ownerId, session.user.id),
+          eq(workspaceMembers.userId, session.user.id)
+        )
+      )
+    )
+    .limit(1)
+
+  if (!access[0]) {
+    return c.json({ message: '无权限访问该工作区' }, 403)
+  }
+
+  const members = await db
+    .select({
+      id: authUsers.id,
+      name: authUsers.name,
+      email: authUsers.email,
+      image: authUsers.image,
+      role: workspaceMembers.role,
+    })
+    .from(workspaceMembers)
+    .innerJoin(authUsers, eq(workspaceMembers.userId, authUsers.id))
+    .where(eq(workspaceMembers.workspaceId, workspaceId))
+
+  const [owner] = await db
+    .select({
+      id: authUsers.id,
+      name: authUsers.name,
+      email: authUsers.email,
+      image: authUsers.image,
+    })
+    .from(workspaces)
+    .innerJoin(authUsers, eq(workspaces.ownerId, authUsers.id))
+    .where(eq(workspaces.id, workspaceId))
+    .limit(1)
+
+  if (owner && !members.some((member) => member.id === owner.id)) {
+    members.push({ ...owner, role: 'owner' })
+  }
+
+  return c.json({ members })
 })
 
 workspacesRouter.post('/', async (c) => {

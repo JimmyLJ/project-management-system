@@ -1,10 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { getMyWorkspaces, createWorkspace, workspaceKeys } from "./api";
+import { getMyWorkspaces, createWorkspace, getWorkspaceMembers, workspaceKeys } from "./api";
 import type { CreateWorkspacePayload } from "./types";
-
-const WORKSPACE_STORAGE_KEY = "pms-workspace";
+import { getStoredWorkspaceSlug, setStoredWorkspaceSlug } from "./storage";
 
 export const useMyWorkspaces = () => {
   return useQuery({
@@ -25,9 +24,13 @@ export const useCreateWorkspace = () => {
   });
 };
 
-const getStoredWorkspaceSlug = () => {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(WORKSPACE_STORAGE_KEY);
+export const useWorkspaceMembers = (workspaceId?: string) => {
+  return useQuery({
+    queryKey: workspaceKeys.members(workspaceId),
+    queryFn: () => getWorkspaceMembers(workspaceId as string),
+    enabled: Boolean(workspaceId),
+    staleTime: 60_000,
+  });
 };
 
 export const useCurrentWorkspace = () => {
@@ -46,7 +49,7 @@ export const useCurrentWorkspace = () => {
 
   useEffect(() => {
     if (typeof window === "undefined" || !currentWorkspace) return;
-    window.localStorage.setItem(WORKSPACE_STORAGE_KEY, currentWorkspace.slug);
+    setStoredWorkspaceSlug(currentWorkspace.slug);
   }, [currentWorkspace]);
 
   return {

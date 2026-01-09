@@ -1,9 +1,10 @@
 import { apiRequest } from "~/lib/apiClient";
-import type { Workspace, CreateWorkspacePayload } from "./types";
+import type { Workspace, CreateWorkspacePayload, WorkspaceMember } from "./types";
 
 export const workspaceKeys = {
   all: ["workspaces"] as const,
   me: ["workspaces", "me"] as const,
+  members: (workspaceId?: string) => ["workspaces", workspaceId, "members"] as const,
 };
 
 export const getMyWorkspaces = async () => {
@@ -17,4 +18,9 @@ export const createWorkspace = async (payload: CreateWorkspacePayload) => {
     json: payload,
   });
   return data.workspace;
+};
+
+export const getWorkspaceMembers = async (workspaceId: string) => {
+  const data = await apiRequest<{ members: WorkspaceMember[] }>(`/api/workspaces/${workspaceId}/members`);
+  return data.members;
 };

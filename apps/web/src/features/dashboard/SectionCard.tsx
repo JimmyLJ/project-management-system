@@ -2,12 +2,14 @@ export default function SectionCard({
   title,
   actionLabel,
   actionIcon,
+  onAction,
   children,
   className
 }: {
   title: string;
   actionLabel?: string;
   actionIcon?: React.ReactNode;
+  onAction?: () => void;
   children: React.ReactNode;
   className?: string;
 }) {
@@ -18,7 +20,11 @@ export default function SectionCard({
       <div className="flex items-center justify-between border-b border-[var(--dash-border)] pb-4">
         <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
         {actionLabel ? (
-          <button className="flex items-center gap-1 text-sm text-slate-500 transition hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+          <button
+            type="button"
+            onClick={onAction}
+            className="flex items-center gap-1 text-sm text-slate-500 transition hover:cursor-pointer hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+          >
             <span>{actionLabel}</span>
             {actionIcon}
           </button>

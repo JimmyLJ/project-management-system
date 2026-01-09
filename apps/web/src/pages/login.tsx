@@ -8,7 +8,6 @@ import { useAuthSession } from "~/features/auth/hooks";
 import { ApiError } from "~/lib/apiClient";
 
 const schema = z.object({
-  username: z.string().trim().optional(),
   email: z.string().email("请输入有效的邮箱地址"),
   password: z.string().min(6, "密码至少 6 位"),
 });
@@ -71,18 +70,7 @@ export default function Login() {
           <h1 className="text-2xl font-semibold text-slate-900">登录项目管理系统</h1>
           <p className="mt-2 text-sm text-slate-500">欢迎回来，请登录以继续</p>
           <form className="mt-8 text-left" noValidate onSubmit={handleSubmit(onSubmit)}>
-            <label className="text-sm font-medium text-slate-700" htmlFor="username">
-              用户名
-            </label>
-            <input
-              id="username"
-              type="text"
-              autoComplete="username"
-              placeholder="请输入用户名"
-              className="mt-2 w-full rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none ring-0 focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-              {...register("username")}
-            />
-            <label className="mt-4 block text-sm font-medium text-slate-700" htmlFor="email">
+            <label className="text-sm font-medium text-slate-700" htmlFor="email">
               邮箱地址
             </label>
             <input
