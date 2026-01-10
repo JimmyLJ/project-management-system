@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { app } from "./test-utils";
 import { db } from "../db";
+import { authUsers } from "../db/schema";
 
 type SignUpPayload = {
   name: string;
@@ -32,7 +33,7 @@ const buildHeaders = (cookie?: string, contentType = true) => {
 
 const resetTables = async () => {
   await db.execute(
-    sql`TRUNCATE TABLE "auth_sessions", "auth_accounts", "auth_verifications", "auth_users" RESTART IDENTITY CASCADE`,
+    sql`TRUNCATE TABLE "project_members", "projects", "workspaces", "auth_sessions", "auth_accounts", "auth_verifications", "auth_users" RESTART IDENTITY CASCADE`,
   );
 };
 
@@ -67,6 +68,15 @@ const createAuthenticatedUser = async () => {
   const signInRes = await signIn({ email, password });
   const cookie = extractCookie(signInRes);
   return { email, cookie };
+};
+
+const getUserIdByEmail = async (email: string) => {
+  const [user] = await db
+    .select({ id: authUsers.id })
+    .from(authUsers)
+    .where(eq(authUsers.email, email))
+    .limit(1);
+  return user?.id;
 };
 
 const createWorkspace = async (cookie: string, name = "测试工作区", slug = "test-ws") => {
@@ -177,6 +187,7 @@ describe("projects endpoints", () => {
     expect(json.project.status).toBe("planning");
     expect(json.project.priority).toBe("medium");
     expect(json.project.id).toBeDefined();
+    expect(json.project.memberCount).toBe(0);
   });
 
   it("创建后可以获取项目列表", async () => {
@@ -202,5 +213,36 @@ describe("projects endpoints", () => {
     const json = await res.json();
     expect(json.projects).toHaveLength(1);
     expect(json.projects[0].name).toBe("项目 A");
+    expect(json.projects[0].memberCount).toBe(0);
+  });
+
+  it("成员数量返回正确", async () => {
+    const { cookie: ownerCookie, email: ownerEmail } = await createAuthenticatedUser();
+    const { workspace } = await createWorkspace(ownerCookie);
+    const { email: leadEmail } = await createAuthenticatedUser();
+    const { email: memberEmail } = await createAuthenticatedUser();
+    const leadId = await getUserIdByEmail(leadEmail);
+    const memberId = await getUserIdByEmail(memberEmail);
+    const ownerId = await getUserIdByEmail(ownerEmail);
+    if (!leadId || !memberId || !ownerId) {
+      throw new Error("User not found");
+    }
+
+    const projectRes = await app.request("/api/projects", {
+      method: "POST",
+      headers: buildHeaders(ownerCookie),
+      body: JSON.stringify({
+        workspaceId: workspace.id,
+        name: "成员项目",
+        status: "active",
+        priority: "medium",
+        leadId,
+        memberIds: [memberId],
+      }),
+    });
+
+    const projectJson = await projectRes.json();
+    expect(projectRes.status).toBe(201);
+    expect(projectJson.project.memberCount).toBe(2);
   });
 });
